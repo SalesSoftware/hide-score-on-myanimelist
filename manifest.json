@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Hide score on myanimelist",
+  "version": "1.0.0",
+  "description": "Hides scores on myanimelist",
+  "icons": {
+    
+  },
+
+  "content_scripts": [
+        {
+            "matches": ["https://myanimelist.net/anime*", "https://myanimelist.net/manga*"],
+            "css": ["css/preload-hide.css"],
+            "run_at": "document_start"
+        },
+        {
+            "matches": ["https://myanimelist.net/anime*", "https://myanimelist.net/manga*"],
+            "js": ["score-hider.js"],
+            "run_at": "document_end"
+        }
+    ]
+}

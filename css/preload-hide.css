@@ -1,0 +1,15 @@
+/*
+score-hider.js waits for the document to fullyload before hiding the elements, this causes a delay 
+that makes the MAL scores be visible for a short time once the page is loaded.
+
+To circumvent this, this css section is run AS the page is loading, making the score section fully
+invisible. 
+
+After score-hider.js finishes hiding the scores, this element is set to visible again, guaranteeing
+that the users will absolutely never see the scores unless they want to. 
+
+TODO: Decide if you're going to hide the side-bar and review stats initially as well
+ */
+div.stats-block{
+	visibility: hidden; 
+}
