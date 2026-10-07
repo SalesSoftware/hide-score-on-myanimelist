@@ -35,7 +35,7 @@ class ScoreHider{
 			{
 				"type": "score",
 				"element": {
-					"statsBlock": this.divStatsBlock.querySelector(".score-label"),
+					"statsBlock": this.divStatsBlock?.querySelector(".score-label"),
 					"leftSide": this.leftSidebar.querySelector(".score-label")
 				},
 				"value": this.divStatsBlock.querySelector(".score-label").innerText
@@ -44,15 +44,15 @@ class ScoreHider{
 				"type": "users",				
 				"element": {
 					//DISCLAIMER: The value is in .fl-l.score "data-user" attribute
-					"statsBlock": this.divStatsBlock.querySelector(".fl-l.score"),					
+					"statsBlock": this.divStatsBlock?.querySelector(".fl-l.score"),					
 					"leftSide": this.getSidebarTextNode("users")
 				},				
-				"value": this.divStatsBlock.querySelector(".fl-l.score").getAttribute("data-user")
+				"value": this.divStatsBlock.querySelector(".fl-l.score").getAttribute("data-user")							
 			},
 			{
 				"type": "rank",
 				"element": {
-					"statsBlock": this.divStatsBlock.querySelector(".numbers.ranked strong"),
+					"statsBlock": this.divStatsBlock?.querySelector(".numbers.ranked strong"),
 					"leftSide": this.getSidebarTextNode("ranked")
 
 				},				
@@ -61,7 +61,7 @@ class ScoreHider{
 			{
 				"type": "popularity",
 				"element": {
-					"statsBlock": this.divStatsBlock.querySelector(".numbers.popularity strong"),
+					"statsBlock": this.divStatsBlock?.querySelector(".numbers.popularity strong"),
 					"leftSide": this.getSidebarTextNode("popularity")
 				},				
 				"value": this.divStatsBlock.querySelector(".numbers.popularity strong").innerText
@@ -69,7 +69,7 @@ class ScoreHider{
 			{
 				"type": "members",
 				"element": {
-					"statsBlock": this.divStatsBlock.querySelector(".numbers.members strong"),
+					"statsBlock": this.divStatsBlock?.querySelector(".numbers.members strong"),
 					"leftSide": this.getSidebarTextNode("members")
 				},			
 				"value": this.divStatsBlock.querySelector(".numbers.members strong").innerText
@@ -80,17 +80,19 @@ class ScoreHider{
 					//the "favorites" section only show up in the left side bar
 					"leftSide": this.getSidebarTextNode("favorites")
 				},			
-				"value": this.getSidebarTextNode("favorites").textContent
+				//using "?." in case getSidebarTextNode() returns null 
+				"value": this.getSidebarTextNode("favorites")?.textContent
 			},
-	    ];	    
+	    ];	  
+	    console.log("scoreDetails");
+	    console.log(this.scoreDetails);
 	    //calling the function that hides the scores
 	    this.statsBlockHideScores();
+	    this.sideBarHideScores();
 
 	    //stats-block visible again!
 	    this.divStatsBlock.style.opacity = "1";
 
-	    // console.log("random stuff");
-	    // console.log(this.getSidebarTextNode("favorites"));
 	}	
 
 	//hides the scores
@@ -109,10 +111,39 @@ class ScoreHider{
 	}
 
 	sideBarHideScores(){
+		//iterating through each type of score and hiding all values
+		for(let i=0; i < this.scoreDetails.length; i++){						
+			let textNode = this.scoreDetails[i].element.leftSide;
+			
+			try{
+				switch(this.scoreDetails[i].type){
+					case "users":
+						//The first if is for when the text node is COMPLETE
+						//e.g: #text: "(scored by 200 users)"
 
+						//the else is for when the text node is separated
+						//e.g: #text: "(scored by " | #text: "200 users)" <-- the one we're altering						
+						if(textNode.textContent.includes("(scored by"))
+							textNode.textContent = `\n(scored by ${this.scorePlaceholder} users)\n`;
+						else
+							textNode.textContent = `\n ${this.scorePlaceholder} users)\n`;
+						break;
+					case "score":
+						textNode.textContent = this.scorePlaceholder;
+						break;
+					case "rank":
+						textNode.textContent = `\n ${this.scorePlaceholder}`;
+						break;	
+					default: 
+						textNode.textContent = `\n ${this.scorePlaceholder}\n`;	
+				}
+			}catch(error){
+				console.error(`ERROR: sideBarHideScores() error when hiding "${this.scoreDetails[i].type}" (${error})`);
+			}				
+		}
 	}
 
-
+	//get the text node from the stat from the left side bar
 	getSidebarTextNode(elementName) {
 		elementName = elementName.toLowerCase(); //putting the parameter in lowercase				
 
@@ -154,21 +185,39 @@ class ScoreHider{
 
 		//code below is only run if the element isn't undefined
 		if(element){
-			//The text is inside the div, with no way of directly indetifying it
-			//Therefore, we need to get the NODE related to the text itself
-			let value = Array.from(element.childNodes).filter((node)=>{
-				//nodeType 3 directly refers to TEXT nodes
-				return node.nodeType == 3 
-					   && node.textContent.replace("\n", "").trim();
-					   //Some of the nodes from the .spaceit_pad are simply "\n"
-					   //With this, we make sure we get ONLY the node with the text we want
-			});
-
-			//Specifically for the "users", there are two text nodes. And we want the LAST node.
-			//for the other stats, there's only one node, so we can safely use position 0
-			value = value[(elementName == "users") ? 1 : 0];							
-
-			return value;			
+			try{
+				//getting the element that has the stat we need			
+				let value = Array.from(element.childNodes).filter((node)=>{				
+					if(elementName == "users"){					
+						//since the SCORE and USERS stats are in the same div, we need to be more specific
+						//when calling for the "users" stat							
+						return node.nodeType == 3 
+						       && node.textContent.includes("users");
+					}else{
+						return node.nodeType == 3 
+						       && node.textContent.replace("\n", "").trim();	
+					}									  
+				});						
+				
+				/**
+				 * If we didn't manage to get a value for the USERS stat in the last code, it's because
+				 * the stat we want is inside a <small> element
+				 * 
+				 * Basically, on /anime pages, the "(scored by x users)" text is loose in the <div>
+				 * However on /manga pages (Including light novels) it is inside a <small> element
+				 * 
+				 * Therefore, the code below intends to extract the "users" stat from /manga pages
+				*/
+				if(elementName == "users" && value.length == 0){
+					value = Array.from(element.querySelectorAll("small")).filter((e)=>{
+	    				return e.textContent.includes("users")
+					}); 				
+				}						
+							
+				return value[0];	
+			}catch(error){
+				console.error(`ERROR: getSidebarTextNode() error when trying to retrieve "${elementName}" (${error})`);
+			}
 		}
 		//if the element is undefined, return null
 		//most likely an invalid elementName was informed 
