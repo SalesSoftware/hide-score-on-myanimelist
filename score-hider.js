@@ -12,12 +12,24 @@
  * 
 */
 class ScoreHider{	
-	constructor(){								
+	constructor(){	
+
+		//******************** DEFINING THE GLOBAL VARIABLES******************************************							
 		//IMPORTANT: .stats-block is automatically hidden by css/preoload-hide.css
 		//As such it's CRITICALLY IMPORTANT that this file makes it visible again after hiding the scores
 		this.divStatsBlock = document.querySelector(".stats-block");
 		this.leftSidebar = document.querySelector(".leftside");
 
+		//Review elements
+		this.infoReviewHeader = document.querySelector(".mal-navbar");
+		this.reviewDetails = {
+			"recommend": this.infoReviewHeader?.querySelector(".recommended strong"),
+			"mixed": this.infoReviewHeader?.querySelector(".mixed-feelings strong"),
+			"notRecommend": this.infoReviewHeader?.querySelector(".not-recommended strong"),
+			"ratioBar": this.infoReviewHeader?.querySelector(".review-ratio__bar"),
+			"amount": this.infoReviewHeader?.querySelector(".right strong")
+		}
+		
 		this.scorePlaceholder = "?"; //The text that will replace the scores
 
 		/*
@@ -89,6 +101,7 @@ class ScoreHider{
 	    //calling the function that hides the scores
 	    this.statsBlockHideScores();
 	    this.sideBarHideScores();
+	    this.hideReviewStats();
 
 	    //stats-block visible again!
 	    this.divStatsBlock.style.opacity = "1";
@@ -225,6 +238,14 @@ class ScoreHider{
 		
 	}
 	
+	//hides elements from the REVIEW section of the page
+	hideReviewStats(){
+		this.reviewDetails["ratioBar"].style.visibility = "hidden";
+		this.reviewDetails["recommend"].textContent = this.scorePlaceholder;
+		this.reviewDetails["mixed"].textContent = this.scorePlaceholder;
+		this.reviewDetails["notRecommend"].textContent = this.scorePlaceholder;
+		this.reviewDetails["amount"].textContent = this.scorePlaceholder;
+	}
 }
 
 //instanciating the ScoreHider class, making it execute the commands.
