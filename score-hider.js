@@ -106,27 +106,52 @@ class ScoreHider{
 
 	    //this.hideSidebarStat(["favorites", "score", "popularity"]);
 		this.hideSidebarStats(["all"]);
-
+		this.hideStatsBlockStats(["all"]);
 	    //stats-block visible again!
 	    this.divStatsBlock.style.opacity = "1";
 
 	}	
 
-	//hides the scores
-	statsBlockHideScores(){					
+	/*
+		Receives an array with stat names, and hides every stat informed in the array
+		if statList is "all" or ["all"] it will hide every single stat from the left side bar
+
+		statList examples:
+		["members", "score", "popularity"]
+		["users"]
+		["all"]
+		"all"
+	*/
+	hideStatsBlockStats(statList){
+		//if statList is "all", all elements from the left side bar will be hidden
+		if(statList === "all" || statList[0] == "all")		
+			//making sure "favorites" isn't in the list, since it's not in the stats block	
+			statList = this.scoreDetails.reduce((results, value)=>{				
+				if(value.type != "favorites")
+					results.push(value.type)
+				return results;
+			}, []);
+
 		//iterating through each type of score and hiding all values
-		for(let i=0; i < this.scoreDetails.length; i++){						
-			let element = this.scoreDetails[i].element.statsBlock;
-			//since the "users" score is an attribute, we need to hide the value differently.
-			if(this.scoreDetails[i].type == "users")
-				element.setAttribute("data-user", `${this.scorePlaceholder} users`);			
-			else if(this.scoreDetails[i].type != "favorites")
-				//"favorites" is from the left side bar, so it doesn't have a statsBlock value
-				element.replaceChildren(this.scorePlaceholder);			
+		for(let statName of statList){						
+			console.log(`hideStatBlockStat(): HIDING "${statName}" stat`);
+			try{
+				//getting the actual DOMElement/text node of the stat we want to hide
+				let statElement = this.scoreDetails.filter((e)=>{
+					return e.type == statName;
+				});				
+				statElement = statElement[0].element.statsBlock;					
+				//since the "users" score is an attribute, we need to hide the value differently.				
+				if(statName == "users")
+					statElement.setAttribute("data-user", `${this.scorePlaceholder} users`);			
+				else					
+					statElement.replaceChildren(this.scorePlaceholder);			
+			}catch(error){
+				console.error(`hideStatBlockStat(): ERROR while hiding "${statName}" (${error})`);
+			}
 		}
-			
 	}
-	
+
 	/*
 		Receives an array with stat names, and hides every stat informed in the array
 		if statList is "all" or ["all"] it will hide every single stat from the left side bar
