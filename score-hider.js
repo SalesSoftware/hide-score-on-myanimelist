@@ -99,9 +99,13 @@ class ScoreHider{
 	    console.log("scoreDetails");
 	    console.log(this.scoreDetails);
 	    //calling the function that hides the scores
-	    this.statsBlockHideScores();
-	    this.sideBarHideScores();
-	    this.hideReviewStats();
+	    
+	    //this.statsBlockHideScores();
+	    //this.sideBarHideScores();
+	    //this.hideReviewStats();
+
+	    //this.hideSidebarStat(["favorites", "score", "popularity"]);
+		this.hideSidebarStats(["all"]);
 
 	    //stats-block visible again!
 	    this.divStatsBlock.style.opacity = "1";
@@ -122,36 +126,58 @@ class ScoreHider{
 		}
 			
 	}
+	
+	/*
+		Receives an array with stat names, and hides every stat informed in the array
+		if statList is "all" or ["all"] it will hide every single stat from the left side bar
 
-	sideBarHideScores(){
-		//iterating through each type of score and hiding all values
-		for(let i=0; i < this.scoreDetails.length; i++){						
-			let textNode = this.scoreDetails[i].element.leftSide;
-			
+		statList examples:
+		["favorites", "score", "popularity"]
+		["users"]
+		["all"]
+		"all"
+	*/
+	hideSidebarStats(statList){
+		//if statList is "all", all elements from the left side bar will be hidden
+		if(statList === "all" || statList[0] == "all")
+			statList = this.scoreDetails.map((e)=>{
+				return e.type;
+			});
+
+		//iterating through the entire statList and hiding all the elements 
+		for(let statName of statList){		
+			console.log(`hideSidebarStat(): HIDING "${statName}" stat`);
+			//getting the actual DOMElement/text node of the stat we want to hide
+			let statElement = this.scoreDetails.filter((e)=>{
+				return e.type == statName;
+			});
+			statElement = statElement[0].element.leftSide;	
+
 			try{
-				switch(this.scoreDetails[i].type){
+				//replacing the textContent of the stat element, effectively hiding the stat.
+				switch(statName){
 					case "users":
 						//The first if is for when the text node is COMPLETE
 						//e.g: #text: "(scored by 200 users)"
 
 						//the else is for when the text node is separated
 						//e.g: #text: "(scored by " | #text: "200 users)" <-- the one we're altering						
-						if(textNode.textContent.includes("(scored by"))
-							textNode.textContent = `\n(scored by ${this.scorePlaceholder} users)\n`;
+						if(statElement.textContent.includes("(scored by"))
+							statElement.textContent = `\n(scored by ${this.scorePlaceholder} users)\n`;
 						else
-							textNode.textContent = `\n ${this.scorePlaceholder} users)\n`;
+							statElement.textContent = `\n ${this.scorePlaceholder} users)\n`;
 						break;
-					case "score":
-						textNode.textContent = this.scorePlaceholder;
+					case "score":						
+						statElement.textContent = this.scorePlaceholder;
 						break;
 					case "rank":
-						textNode.textContent = `\n ${this.scorePlaceholder}`;
+						statElement.textContent = `\n ${this.scorePlaceholder}`;
 						break;	
 					default: 
-						textNode.textContent = `\n ${this.scorePlaceholder}\n`;	
+						statElement.textContent = `\n ${this.scorePlaceholder}\n`;	
 				}
 			}catch(error){
-				console.error(`ERROR: sideBarHideScores() error when hiding "${this.scoreDetails[i].type}" (${error})`);
+				console.error(`hideSidebarStat(): ERROR while hiding "${statName}" (${error})`);
 			}				
 		}
 	}
