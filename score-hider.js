@@ -23,10 +23,10 @@ class ScoreHider{
 		//Review elements
 		this.infoReviewHeader = document.querySelector(".mal-navbar");
 		this.reviewDetails = {
-			"recommend": this.infoReviewHeader?.querySelector(".recommended strong"),
+			"recommended": this.infoReviewHeader?.querySelector(".recommended strong"),
 			"mixed": this.infoReviewHeader?.querySelector(".mixed-feelings strong"),
-			"notRecommend": this.infoReviewHeader?.querySelector(".not-recommended strong"),
-			"ratioBar": this.infoReviewHeader?.querySelector(".review-ratio__bar"),
+			"not_recommended": this.infoReviewHeader?.querySelector(".not-recommended strong"),
+			"ratio_bar": this.infoReviewHeader?.querySelector(".review-ratio__bar"),
 			"amount": this.infoReviewHeader?.querySelector(".right strong")
 		}
 		
@@ -99,14 +99,11 @@ class ScoreHider{
 	    console.log("scoreDetails");
 	    console.log(this.scoreDetails);
 	    //calling the function that hides the scores
+	    	    
 	    
-	    //this.statsBlockHideScores();
-	    //this.sideBarHideScores();
-	    //this.hideReviewStats();
-
-	    //this.hideSidebarStat(["favorites", "score", "popularity"]);
 		this.hideSidebarStats(["all"]);
 		this.hideStatsBlockStats(["all"]);
+		this.hideReviewStats(["all"]);
 	    //stats-block visible again!
 	    this.divStatsBlock.style.opacity = "1";
 
@@ -289,13 +286,27 @@ class ScoreHider{
 		
 	}
 	
+
 	//hides elements from the REVIEW section of the page
-	hideReviewStats(){
-		this.reviewDetails["ratioBar"].style.visibility = "hidden";
-		this.reviewDetails["recommend"].textContent = this.scorePlaceholder;
-		this.reviewDetails["mixed"].textContent = this.scorePlaceholder;
-		this.reviewDetails["notRecommend"].textContent = this.scorePlaceholder;
-		this.reviewDetails["amount"].textContent = this.scorePlaceholder;
+	hideReviewStats(statList){
+		//if it's "all", gets a list of every single review stat
+		if(statList === "all" || statList[0] == "all")
+			statList = Object.keys(this.reviewDetails);
+
+		//iterating through each one and hiding the stats
+		for(let statName of statList){			
+			try{
+				console.log(`hideReviewStats(): HIDING "${statName}" stat`);					
+				if(statName == "ratio_bar"){
+					this.reviewDetails[statName].style.visibility = "hidden";
+				}else{
+					this.reviewDetails[statName].textContent = this.scorePlaceholder;
+				}
+			}catch(error){
+				console.error(`hideReviewStats(): ERROR while hiding "${statName}" (${error})`);
+			}
+		}
+		
 	}
 }
 
