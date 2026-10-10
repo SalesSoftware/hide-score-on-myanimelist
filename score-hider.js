@@ -12,103 +12,116 @@
  * 
 */
 class ScoreHider{	
-	constructor(){	
-
+	constructor(){		
 		//******************** DEFINING THE GLOBAL VARIABLES******************************************							
 		//IMPORTANT: .stats-block is automatically hidden by css/preoload-hide.css
-		//As such it's CRITICALLY IMPORTANT that this file makes it visible again after hiding the scores
+		//As such it's CRITICALLY IMPORTANT that this file makes it visible again after hiding the scores	
 		this.divStatsBlock = document.querySelector(".stats-block");
 		this.leftSidebar = document.querySelector(".leftside");
-
 		//Review elements
 		this.infoReviewHeader = document.querySelector(".mal-navbar");
-		this.reviewDetails = {
-			"recommended": this.infoReviewHeader?.querySelector(".recommended strong"),
-			"mixed": this.infoReviewHeader?.querySelector(".mixed-feelings strong"),
-			"not_recommended": this.infoReviewHeader?.querySelector(".not-recommended strong"),
-			"ratio_bar": this.infoReviewHeader?.querySelector(".review-ratio__bar"),
-			"amount": this.infoReviewHeader?.querySelector(".right strong")
-		}
-		
 		this.scorePlaceholder = "?"; //The text that will replace the scores
+		try{						
+			this.reviewDetails = {
+				"recommended": this.infoReviewHeader?.querySelector(".recommended strong"),
+				"mixed": this.infoReviewHeader?.querySelector(".mixed-feelings strong"),
+				"not_recommended": this.infoReviewHeader?.querySelector(".not-recommended strong"),
+				"ratio_bar": this.infoReviewHeader?.querySelector(".review-ratio__bar"),
+				"amount": this.infoReviewHeader?.querySelector(".right strong")
+			}
+						
+			/*
+				array of objects containing relevent information about the DOM elements
+				related to the scores
 
-		/*
-			array of objects containing relevent information about the DOM elements
-			related to the scores
+				it follows this format:
 
-			it follows this format:
-
-			type => the name/type of the score
-			element => the DOM element related to the score
-			value => the ORIGINAL VALUE of the score before being hidden
-		
-		*/
-		this.scoreDetails = [
-			{
-				"type": "score",
-				"element": {
-					"statsBlock": this.divStatsBlock?.querySelector(".score-label"),
-					"leftSide": this.leftSidebar.querySelector(".score-label")
+				type => the name/type of the score
+				element => the DOM element related to the score
+				value => the ORIGINAL VALUE of the score before being hidden
+			
+			*/		
+			this.scoreDetails = [
+				{
+					"type": "score",
+					"element": {
+						"statsBlock": this.divStatsBlock?.querySelector(".score-label"),
+						"leftSide": this.leftSidebar.querySelector(".score-label")
+					},
+					"value": this.leftSidebar?.querySelector(".score-label").textContent
 				},
-				"value": this.divStatsBlock.querySelector(".score-label").innerText
-			},
-			{
-				"type": "users",				
-				"element": {
-					//DISCLAIMER: The value is in .fl-l.score "data-user" attribute
-					"statsBlock": this.divStatsBlock?.querySelector(".fl-l.score"),					
-					"leftSide": this.getSidebarTextNode("users")
-				},				
-				"value": this.divStatsBlock.querySelector(".fl-l.score").getAttribute("data-user")							
-			},
-			{
-				"type": "rank",
-				"element": {
-					"statsBlock": this.divStatsBlock?.querySelector(".numbers.ranked strong"),
-					"leftSide": this.getSidebarTextNode("ranked")
+				{
+					"type": "users",				
+					"element": {
+						//DISCLAIMER: The value is in .fl-l.score "data-user" attribute
+						"statsBlock": this.divStatsBlock?.querySelector(".fl-l.score"),					
+						"leftSide": this.getSidebarTextNode("users")
+					},				
+					"value": this.getSidebarTextNode("users")?.textContent
+				},
+				{
+					"type": "rank",
+					"element": {
+						"statsBlock": this.divStatsBlock?.querySelector(".numbers.ranked strong"),
+						"leftSide": this.getSidebarTextNode("ranked")
 
-				},				
-				"value": this.divStatsBlock.querySelector(".numbers.ranked strong").innerText
-			},
-			{
-				"type": "popularity",
-				"element": {
-					"statsBlock": this.divStatsBlock?.querySelector(".numbers.popularity strong"),
-					"leftSide": this.getSidebarTextNode("popularity")
-				},				
-				"value": this.divStatsBlock.querySelector(".numbers.popularity strong").innerText
-			},
-			{
-				"type": "members",
-				"element": {
-					"statsBlock": this.divStatsBlock?.querySelector(".numbers.members strong"),
-					"leftSide": this.getSidebarTextNode("members")
-				},			
-				"value": this.divStatsBlock.querySelector(".numbers.members strong").innerText
-			},
-			{
-				"type": "favorites",
-				"element": {					
-					//the "favorites" section only show up in the left side bar
-					"leftSide": this.getSidebarTextNode("favorites")
-				},			
-				//using "?." in case getSidebarTextNode() returns null 
-				"value": this.getSidebarTextNode("favorites")?.textContent
-			},
-	    ];	  
-	    console.log("scoreDetails");
-	    console.log(this.scoreDetails);
-	    //calling the function that hides the scores
-	    	    
-	    
-		this.hideSidebarStats(["all"]);
-		this.hideStatsBlockStats(["all"]);
-		this.hideReviewStats(["all"]);
-	    //stats-block visible again!
-	    this.divStatsBlock.style.opacity = "1";
+					},				
+					"value": this.getSidebarTextNode("ranked")?.textContent
+				},
+				{
+					"type": "popularity",
+					"element": {
+						"statsBlock": this.divStatsBlock?.querySelector(".numbers.popularity strong"),
+						"leftSide": this.getSidebarTextNode("popularity")
+					},				
+					"value": this.getSidebarTextNode("popularity")?.textContent
+				},
+				{
+					"type": "members",
+					"element": {
+						"statsBlock": this.divStatsBlock?.querySelector(".numbers.members strong"),
+						"leftSide": this.getSidebarTextNode("members")
+					},			
+					"value": this.getSidebarTextNode("members")?.textContent
+				},
+				{
+					"type": "favorites",
+					"element": {					
+						//the "favorites" section only show up in the left side bar
+						"leftSide": this.getSidebarTextNode("favorites")
+					},			
+					//using "?." in case getSidebarTextNode() returns null 
+					"value": this.getSidebarTextNode("favorites")?.textContent
+				},
+		    ];	  
+		    console.log("scoreDetails");
+		    console.log(this.scoreDetails);
 
+		    //calling the methods that hides the scores		    	    
+		   	if(this.divStatsBlock)
+		    	this.hideStatsBlockStats(["all"]);
+
+		    if(this.leftSidebar)
+				this.hideSidebarStats(["all"]);	
+
+			if(this.infoReviewHeader)
+				this.hideReviewStats(["all"]);
+		}catch(error){
+			console.error(`GENERAL ERROR: ${error}`);
+		}finally{
+			//making the elements hidden the preload-hide.css visible again
+		    //stats-block visible again!
+		    if(this.divStatsBlock)
+		    	this.divStatsBlock.style.opacity = "1";
+
+		    if(this.leftSidebar)
+		    	this.leftSidebar.style.opacity = "1";
+
+		    if(this.infoReviewHeader)
+		    	this.infoReviewHeader.style.opacity = "1";
+		}			    
 	}	
-
+	
 	/*
 		Receives an array with stat names, and hides every stat informed in the array
 		if statList is "all" or ["all"] it will hide every single stat from the left side bar

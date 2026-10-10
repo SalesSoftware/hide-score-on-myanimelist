@@ -10,13 +10,15 @@ that the users will absolutely never see the scores unless they want to.
 
 TODO: Decide if you're going to hide the side-bar and review stats initially as well
  */
-div.stats-block{
+div.stats-block,
+div.leftside,
+div.mal-navbar{
 	/*
 		[05/10/2026] - Changing from visibility:hidden to opacity:0
 		Visiblity: hidden makes it impossible to run innerText on the js, which stops the scores from 
-		being stored corretly
+		being stored corretly. opacity: 0; fixes that problem.
 
-		opacity: 0; fixes that problem.
+		[10/10/2026] - Added leftside and mal-navbar (user reviews) to the pre-load hiding 
 	*/
 	opacity: 0; 
 }
