@@ -3,10 +3,19 @@
   "name": "Hide score on myanimelist",
   "version": "1.0.0",
   "description": "Hides scores on myanimelist",
+  "permissions":[
+    "storage"
+  ],
   "icons": {
     
   },
+  "action": {
+    "default_icon":{
 
+    }, 
+    "default_title": "Gotta block them all",
+    "default_popup": "popup-menu.html"    
+  },
   "content_scripts": [
         {
             "matches": ["https://myanimelist.net/anime*", "https://myanimelist.net/manga*"],
@@ -15,8 +24,15 @@
         },
         {
             "matches": ["https://myanimelist.net/anime*", "https://myanimelist.net/manga*"],
-            "js": ["score-hider.js"],
+            "js": ["js/scorehider.class.js"],
             "run_at": "document_end"
         }
-    ]
+    ],
+  "browser_specific_settings": {
+    "gecko": {
+        //apperantely this is required in firefox
+        //TODO: look into it later
+        "id": "malhider@extension"
+    }
+  } 
 }

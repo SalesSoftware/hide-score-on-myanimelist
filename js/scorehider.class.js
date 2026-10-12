@@ -1,11 +1,4 @@
 /**
- *TODO 1)
- * 	Hide the scores from the left side bar, and amount of Recommended/Mixed/Not Recommended reviews as
- *  well
- * 
- * TODO 2)
- * 	Create a extension popup, where the user can choose to hide/show the scores again
- *  Also make it so the user can choose WHICH scores to hide (stat-block, side-bar, reviews)
  * 
  * TODO 3)
  * 	Create an Icon for the project
@@ -20,7 +13,9 @@ class ScoreHider{
 		this.leftSidebar = document.querySelector(".leftside");
 		//Review elements
 		this.infoReviewHeader = document.querySelector(".mal-navbar");
-		this.scorePlaceholder = "?"; //The text that will replace the scores
+		this.scorePlaceholder = "?"; //The text that will replace the scores	
+		this.settings = [];
+
 		try{						
 			this.reviewDetails = {
 				"recommended": this.infoReviewHeader?.querySelector(".recommended strong"),
@@ -98,30 +93,113 @@ class ScoreHider{
 		    console.log(this.scoreDetails);
 
 		    //calling the methods that hides the scores		    	    
-		   	if(this.divStatsBlock)
-		    	this.hideStatsBlockStats(["all"]);
+		   	// if(this.divStatsBlock)
+		    // 	this.hideStatsBlockStats(["all"]);
 
-		    if(this.leftSidebar)
-				this.hideSidebarStats(["all"]);	
+		    // if(this.leftSidebar)
+			// 	this.hideSidebarStats(["all"]);	
 
-			if(this.infoReviewHeader)
-				this.hideReviewStats(["all"]);
+			// if(this.infoReviewHeader)
+			// 	this.hideReviewStats(["all"]);
+
+		    
+		    this.start();
 		}catch(error){
-			console.error(`GENERAL ERROR: ${error}`);
+			console.error(`GENERAL ERROR: ${error}`);			
 		}finally{
-			//making the elements hidden the preload-hide.css visible again
-		    //stats-block visible again!
-		    if(this.divStatsBlock)
-		    	this.divStatsBlock.style.opacity = "1";
-
-		    if(this.leftSidebar)
-		    	this.leftSidebar.style.opacity = "1";
-
-		    if(this.infoReviewHeader)
-		    	this.infoReviewHeader.style.opacity = "1";
-		}			    
+			this.revertPreloadHide();
+		}
+		
+		
 	}	
 	
+	//starts the 
+	async start(){				
+		//CLEARS STORAGE
+		await browser.storage.sync.clear(); 
+// console.log("Testing storage"); console.log(await this.getAllStorage()); throw new Error("Vacila nao");
+
+		//GETS THE STORAGE
+		console.log("retrieving settings");
+		this.settings = await this.getSettingsStorage();
+		// console.log("settings firsto");
+		// console.log(this.settings);
+		// throw new Error("Finish him");
+		//if there isn't any settings stored in the extension's storage
+		if(this.settings?.hide == undefined || this.settings?.show == undefined){
+			console.log("Couldn't find settings data.\nSubmiting new data to the storage");
+
+			//by defaults, the setting will hide every single value. 
+			let statList = this.scoreDetails.map((e)=>{								
+				return e.type
+			});
+			statList = statList.concat(Object.keys(this.reviewDetails));
+			
+			let stored = await this.setSettingsStorage({				
+				"hide": statList,
+				"show": []								
+			});
+
+			console.log("stored");
+			console.log(stored);
+
+			if(stored){
+				this.settings = await this.getSettingsStorage();
+				console.log("settings again");
+				console.log(this.settings);
+			}
+
+		}else{
+			console.log("There's value");
+			console.log(this.settings)
+		}	
+		
+	}
+
+	//only for debugging, returns all values in storage
+	getAllStorage(){
+		return browser.storage.sync.get(null).then(data => console.log(data));
+	}
+
+	getSettingsStorage(){						
+		//returns storage values	
+		return browser.storage.sync.get("scorehider_settings").then((value)=>{
+			console.log("Settings acquired sucessfully\nvalue:");									
+			console.log(value)
+			throw new Error("test");
+			return value?.scorehider_settings;
+		},(error)=>{
+			console.error(`getSettingsStorage(): ERROR WHILE RETRIEVING SETTINGS DATA (${error})`);			
+		});							
+	}
+
+	async setSettingsStorage(scorehider_settings){
+		
+		let success = false;			
+		await browser.storage.sync.set({scorehider_settings}).then(
+			()=>{
+				console.log("stored settings succesfully");				
+				success = true;
+			},
+			(error)=>{
+				console.error(`setSettingsStorage(): ERROR WHILE SETTING SETTINGS DATA (${error})`);				
+			}
+		);
+
+		return success;		
+	}
+
+	revertPreloadHide(){
+		//making the elements hidden the preload-hide.css visible again		    
+		if(this.divStatsBlock)
+		    	this.divStatsBlock.style.opacity = "1";
+
+	    if(this.leftSidebar)
+	    	this.leftSidebar.style.opacity = "1";
+
+	    if(this.infoReviewHeader)
+	    	this.infoReviewHeader.style.opacity = "1";
+	}
 	/*
 		Receives an array with stat names, and hides every stat informed in the array
 		if statList is "all" or ["all"] it will hide every single stat from the left side bar
