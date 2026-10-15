@@ -5,7 +5,7 @@
  * 
 */
 class ScoreHider{	
-	constructor(){		
+	constructor(){
 		//******************** DEFINING THE GLOBAL VARIABLES******************************************							
 		//IMPORTANT: .stats-block is automatically hidden by css/preoload-hide.css
 		//As such it's CRITICALLY IMPORTANT that this file makes it visible again after hiding the scores	
@@ -100,14 +100,10 @@ class ScoreHider{
 			// 	this.hideSidebarStats(["all"]);	
 
 			// if(this.infoReviewHeader)
-			// 	this.hideReviewStats(["all"]);
-
-		    
+			// 	this.hideReviewStats(["all"]);		    			
 		    this.start();
 		}catch(error){
-			console.error(`GENERAL ERROR: ${error}`);			
-		}finally{
-			this.revertPreloadHide();
+			console.error(`${error}`);			
 		}
 		
 		
@@ -115,45 +111,43 @@ class ScoreHider{
 	
 	//starts the 
 	async start(){				
-		//CLEARS STORAGE
-		await browser.storage.sync.clear(); 
-// console.log("Testing storage"); console.log(await this.getAllStorage()); throw new Error("Vacila nao");
+		// await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR TESTS *ONLY*.
 
-		//GETS THE STORAGE
-		console.log("retrieving settings");
-		this.settings = await this.getSettingsStorage();
-		// console.log("settings firsto");
-		// console.log(this.settings);
-		// throw new Error("Finish him");
-		//if there isn't any settings stored in the extension's storage
-		if(this.settings?.hide == undefined || this.settings?.show == undefined){
-			console.log("Couldn't find settings data.\nSubmiting new data to the storage");
+		//retrieves all storage data and then throws an error, THIS IS MEANT FOR TESTS *ONLY*
+		// console.log("Testing storage"); console.log(await this.getAllStorage()); throw new Error("Testing");
+		try{
+			this.settings = await this.getSettings(); //retrieving settings
 
-			//by defaults, the setting will hide every single value. 
-			let statList = this.scoreDetails.map((e)=>{								
-				return e.type
-			});
-			statList = statList.concat(Object.keys(this.reviewDetails));
-			
-			let stored = await this.setSettingsStorage({				
-				"hide": statList,
-				"show": []								
-			});
+			//If there was an error while retrieving the settings, thrown an error
+			if(this.settings?.error)
+				throw Error(`start(): There was an error while trying to retrieve settings from storage (${this.settings.error})`);
 
-			console.log("stored");
-			console.log(stored);
+			//If there was no error, but we still didn' get the settings, then it means it's the first time the extension
+			//is being run.
+			if(!this.settings?.hide || !this.settings?.show){
+				console.log("Couldn't find settings data.\nStoring settings for the first time.");
+				let result = await this.setSettingsFirstUse(); //sets the settings for first time
 
-			if(stored){
-				this.settings = await this.getSettingsStorage();
-				console.log("settings again");
-				console.log(this.settings);
+				if(result.success)
+					this.settings = result.dataStored; //if the data was stored, then just assign it to this.settings
+				else
+					throw Error(`start(): Error when storing settings for the first time (${result?.error})`);
 			}
 
-		}else{
-			console.log("There's value");
-			console.log(this.settings)
-		}	
-		
+			console.log("settings");
+			console.log(this.settings);
+		}catch(error){
+			console.error(error);
+		}finally{
+			console.log("reverting pre-load hide");
+			//making the elements hidden the preload-hide.css visible again
+			if(this.divStatsBlock)
+				this.divStatsBlock.style.opacity = "1";
+			if(this.leftSidebar)
+				this.leftSidebar.style.opacity = "1";
+			if(this.infoReviewHeader)
+				this.infoReviewHeader.style.opacity = "1";
+		}
 	}
 
 	//only for debugging, returns all values in storage
@@ -161,44 +155,83 @@ class ScoreHider{
 		return browser.storage.sync.get(null).then(data => console.log(data));
 	}
 
-	getSettingsStorage(){						
-		//returns storage values	
-		return browser.storage.sync.get("scorehider_settings").then((value)=>{
-			console.log("Settings acquired sucessfully\nvalue:");									
-			console.log(value)
-			throw new Error("test");
-			return value?.scorehider_settings;
-		},(error)=>{
-			console.error(`getSettingsStorage(): ERROR WHILE RETRIEVING SETTINGS DATA (${error})`);			
-		});							
+	//searches for the scorehider_settings in storage, and returns what it finds
+	getSettings(){
+		//browser.storage.sync.get("scorehider_settings")
+		//Promise.reject(new Error("Simulated error2"))
+		return browser.storage.sync.get("scorehider_settings").then(
+			(value)=> value?.scorehider_settings,
+		).catch(
+			(error)=>{return {error}}
+		);
 	}
 
-	async setSettingsStorage(scorehider_settings){
-		
+	//stores the settings in storage, and returns an object that tells if the storage process failed or succeeded
+	/*
+	 * RETURN EXAMPLES:
+	 * {
+	 * 	"success": true,
+	 *  "error": undefined
+	 * }
+	 *
+	 * {
+	 * 	"success": false,
+	 *  "error": Error
+	 * }
+	 */
+	async setSettings(scorehider_settings){
+		//browser.storage.sync.set({scorehider_settings})
+		//Promise.reject(new Error("Simulated error2"))
 		let success = false;			
+		let errorMsg = undefined;
 		await browser.storage.sync.set({scorehider_settings}).then(
 			()=>{
-				console.log("stored settings succesfully");				
+				console.log("stored settings succesfully");
 				success = true;
-			},
+			}
+		).catch(
 			(error)=>{
-				console.error(`setSettingsStorage(): ERROR WHILE SETTING SETTINGS DATA (${error})`);				
+				errorMsg = error;
 			}
 		);
-
-		return success;		
+		return {"success": success, "error": errorMsg};
 	}
 
-	revertPreloadHide(){
-		//making the elements hidden the preload-hide.css visible again		    
-		if(this.divStatsBlock)
-		    	this.divStatsBlock.style.opacity = "1";
+	//stores the settings if there isn't any stored.
+	//it returns the result of this.setSettings(), but if it succeeds a value "dataStored" is attached.
+	/*
+	 * RETURN EXAMPLES:
+	 * {
+	 * 	"success": false,
+	 *  "error": Error
+	 * }
+	 *
+	 * {
+	 * 	"success": true,
+	 *  "error": undefined,
+	 *  "dataStored": {"hide": [...], "show": [...]}
+	 * }
+	 *
+	 */
+	async setSettingsFirstUse(){
+		//creates an array with the keys of every possible hideable element
+		//because by default we hide every single element
+		let statList = this.scoreDetails.map((e)=>{
+			return e.type;
+		});
+		statList = statList.concat(Object.keys(this.reviewDetails));
 
-	    if(this.leftSidebar)
-	    	this.leftSidebar.style.opacity = "1";
+		//creating object that we're going to store
+		let dataToStore = {
+			"hide": statList,
+			"show": []
+		};
 
-	    if(this.infoReviewHeader)
-	    	this.infoReviewHeader.style.opacity = "1";
+		let result = await this.setSettings(dataToStore); //storing settings
+		if(result.success)
+			result.dataStored = dataToStore;
+
+		return result;
 	}
 	/*
 		Receives an array with stat names, and hides every stat informed in the array
