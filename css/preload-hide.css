@@ -8,7 +8,6 @@ invisible.
 After score-hider.js finishes hiding the scores, this element is set to visible again, guaranteeing
 that the users will absolutely never see the scores unless they want to. 
 
-TODO: Decide if you're going to hide the side-bar and review stats initially as well
  */
 div.stats-block,
 div.leftside,

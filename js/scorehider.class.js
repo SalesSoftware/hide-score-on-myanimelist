@@ -1,7 +1,6 @@
 /**
  * 
- * TODO 3)
- * 	Create an Icon for the project
+ * TODO 3) Create an Icon for the project
  * 
 */
 class ScoreHider{	
@@ -17,90 +16,105 @@ class ScoreHider{
 		this.settings = [];
 
 		try{						
-			this.reviewDetails = {
-				"recommended": this.infoReviewHeader?.querySelector(".recommended strong"),
-				"mixed": this.infoReviewHeader?.querySelector(".mixed-feelings strong"),
-				"not_recommended": this.infoReviewHeader?.querySelector(".not-recommended strong"),
-				"ratio_bar": this.infoReviewHeader?.querySelector(".review-ratio__bar"),
-				"amount": this.infoReviewHeader?.querySelector(".right strong")
-			}
-						
 			/*
 				array of objects containing relevent information about the DOM elements
 				related to the scores
 
 				it follows this format:
-
-				type => the name/type of the score
 				element => the DOM element related to the score
+					can be either "statsBlock", "leftSide" or "reviewTab"
 				value => the ORIGINAL VALUE of the score before being hidden
 			
 			*/		
-			this.scoreDetails = [
-				{
-					"type": "score",
-					"element": {
-						"statsBlock": this.divStatsBlock?.querySelector(".score-label"),
-						"leftSide": this.leftSidebar.querySelector(".score-label")
-					},
-					"value": this.leftSidebar?.querySelector(".score-label").textContent
+			this.scoreDetails = {
+				"score":{
+						"element": {
+							"statsBlock": this.divStatsBlock?.querySelector(".score-label"),
+							"leftSide": this.leftSidebar.querySelector(".score-label")
+						},
+						"value": this.leftSidebar?.querySelector(".score-label").textContent
 				},
-				{
-					"type": "users",				
+				"users":{
 					"element": {
 						//DISCLAIMER: The value is in .fl-l.score "data-user" attribute
-						"statsBlock": this.divStatsBlock?.querySelector(".fl-l.score"),					
-						"leftSide": this.getSidebarTextNode("users")
-					},				
-					"value": this.getSidebarTextNode("users")?.textContent
+						"statsBlock": this.divStatsBlock?.querySelector(".fl-l.score"),
+						"leftSide": this.getSidebarElement("users")
+					},
+					/*In some pages, between the "(scored by" and "x users)" there is an invisible <span> element with a number inside it
+					  this hidden <span> causes the "textContent" property to get the wrong number
+					  , because it gets ALL of the text of the element and its children, and ends up joining both numbers.
+
+					  therefore, this solution first checks if the element has HTML with the innerHTML property,
+					  if it has html, then we can safely use innerText, as it gets all the text RESPECTING visibility definitions.
+					*/
+					"value": this.getSidebarElement("users")?.innerHTML
+								? this.getSidebarElement("users")?.innerText.replace(/[^0-9,-]/g, "") // this extracts only the number
+								: this.getSidebarElement("users")?.textContent.replace(/[^0-9,-]/g, "") // this extracts only the number
 				},
-				{
-					"type": "rank",
+				"rank":{
 					"element": {
 						"statsBlock": this.divStatsBlock?.querySelector(".numbers.ranked strong"),
-						"leftSide": this.getSidebarTextNode("ranked")
+						"leftSide": this.getSidebarElement("ranked")
 
-					},				
-					"value": this.getSidebarTextNode("ranked")?.textContent
+					},
+					"value": this.getSidebarElement("ranked")?.textContent
 				},
-				{
-					"type": "popularity",
+				"popularity":{
 					"element": {
 						"statsBlock": this.divStatsBlock?.querySelector(".numbers.popularity strong"),
-						"leftSide": this.getSidebarTextNode("popularity")
-					},				
-					"value": this.getSidebarTextNode("popularity")?.textContent
+						"leftSide": this.getSidebarElement("popularity")
+					},
+					"value": this.getSidebarElement("popularity")?.textContent
 				},
-				{
-					"type": "members",
+				"members":{
 					"element": {
 						"statsBlock": this.divStatsBlock?.querySelector(".numbers.members strong"),
-						"leftSide": this.getSidebarTextNode("members")
-					},			
-					"value": this.getSidebarTextNode("members")?.textContent
+						"leftSide": this.getSidebarElement("members")
+					},
+					"value": this.getSidebarElement("members")?.textContent
 				},
-				{
-					"type": "favorites",
-					"element": {					
-						//the "favorites" section only show up in the left side bar
-						"leftSide": this.getSidebarTextNode("favorites")
-					},			
-					//using "?." in case getSidebarTextNode() returns null 
-					"value": this.getSidebarTextNode("favorites")?.textContent
+				//DISCLAIMER: the "favorites" stat is only shown in the left side bar
+				"favorites":{
+					"element": {
+						"leftSide": this.getSidebarElement("favorites")
+					},
+					"value": this.getSidebarElement("favorites")?.textContent
 				},
-		    ];	  
+				//REVIEW STATS
+				"recommended": {
+					"element": {
+						"reviewTab":this.infoReviewHeader?.querySelector(".recommended strong")
+					},
+					"value": this.infoReviewHeader?.querySelector(".recommended strong").textContent
+				},
+				"mixed": {
+					"element": {
+						"reviewTab": this.infoReviewHeader?.querySelector(".mixed-feelings strong")
+					},
+					"value": this.infoReviewHeader?.querySelector(".mixed-feelings strong").textContent
+				},
+				"not_recommended": {
+					"element": {
+						"reviewTab": this.infoReviewHeader?.querySelector(".not-recommended strong")
+					},
+					"value": this.infoReviewHeader?.querySelector(".not-recommended strong").textContent
+				},
+				"review_amount": {
+					"element": {
+						"reviewTab": this.infoReviewHeader?.querySelector(".right strong")
+					},
+					"value": this.infoReviewHeader?.querySelector(".right strong").textContent
+				},
+				"ratio_bar": {
+					"element": {
+						"reviewTab": this.infoReviewHeader?.querySelector(".review-ratio__bar")
+					}
+				},
+
+			};
+
 		    console.log("scoreDetails");
-		    console.log(this.scoreDetails);
-
-		    //calling the methods that hides the scores		    	    
-		   	// if(this.divStatsBlock)
-		    // 	this.hideStatsBlockStats(["all"]);
-
-		    // if(this.leftSidebar)
-			// 	this.hideSidebarStats(["all"]);	
-
-			// if(this.infoReviewHeader)
-			// 	this.hideReviewStats(["all"]);		    			
+			console.log(this.scoreDetails);
 		    this.start();
 		}catch(error){
 			console.error(`${error}`);			
@@ -109,7 +123,7 @@ class ScoreHider{
 		
 	}	
 	
-	//starts the 
+	//sets up the system to start the score hiding process
 	async start(){				
 		// await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR TESTS *ONLY*.
 
@@ -122,7 +136,7 @@ class ScoreHider{
 			if(this.settings?.error)
 				throw Error(`start(): There was an error while trying to retrieve settings from storage (${this.settings.error})`);
 
-			//If there was no error, but we still didn' get the settings, then it means it's the first time the extension
+			//If there was no error, but we still didn't get the settings, then it means it's the first time the extension
 			//is being run.
 			if(!this.settings?.hide || !this.settings?.show){
 				console.log("Couldn't find settings data.\nStoring settings for the first time.");
@@ -133,9 +147,12 @@ class ScoreHider{
 				else
 					throw Error(`start(): Error when storing settings for the first time (${result?.error})`);
 			}
-
 			console.log("settings");
 			console.log(this.settings);
+
+			this.defineStatsVisibility(this.settings); //starts the hiding/showing proccess based on the settings
+
+			this.startListeners(); //Initialize the listeners
 		}catch(error){
 			console.error(error);
 		}finally{
@@ -209,23 +226,17 @@ class ScoreHider{
 	 * {
 	 * 	"success": true,
 	 *  "error": undefined,
-	 *  "dataStored": {"hide": [...], "show": [...]}
+	 *  "dataStored": [{"action": "hide", "list": [...]},{"action": "show", "list": [...]}]
 	 * }
 	 *
 	 */
 	async setSettingsFirstUse(){
-		//creates an array with the keys of every possible hideable element
-		//because by default we hide every single element
-		let statList = this.scoreDetails.map((e)=>{
-			return e.type;
-		});
-		statList = statList.concat(Object.keys(this.reviewDetails));
 
-		//creating object that we're going to store
-		let dataToStore = {
-			"hide": statList,
-			"show": []
-		};
+		//creating list that we're going to store
+		let dataToStore = [
+			{"action": "hide", "list": Object.keys(this.scoreDetails)},//by default we hide every single stat
+			{"action": "show", "list": []},
+		];
 
 		let result = await this.setSettings(dataToStore); //storing settings
 		if(result.success)
@@ -233,118 +244,123 @@ class ScoreHider{
 
 		return result;
 	}
-	/*
-		Receives an array with stat names, and hides every stat informed in the array
-		if statList is "all" or ["all"] it will hide every single stat from the left side bar
 
-		statList examples:
-		["members", "score", "popularity"]
-		["users"]
-		["all"]
-		"all"
-	*/
-	hideStatsBlockStats(statList){
-		//if statList is "all", all elements from the left side bar will be hidden
-		if(statList === "all" || statList[0] == "all")		
-			//making sure "favorites" isn't in the list, since it's not in the stats block	
-			statList = this.scoreDetails.reduce((results, value)=>{				
-				if(value.type != "favorites")
-					results.push(value.type)
-				return results;
-			}, []);
 
-		//iterating through each type of score and hiding all values
-		for(let statName of statList){						
-			console.log(`hideStatBlockStat(): HIDING "${statName}" stat`);
-			try{
-				//getting the actual DOMElement/text node of the stat we want to hide
-				let statElement = this.scoreDetails.filter((e)=>{
-					return e.type == statName;
-				});				
-				statElement = statElement[0].element.statsBlock;					
-				//since the "users" score is an attribute, we need to hide the value differently.				
-				if(statName == "users")
-					statElement.setAttribute("data-user", `${this.scorePlaceholder} users`);			
-				else					
-					statElement.replaceChildren(this.scorePlaceholder);			
-			}catch(error){
-				console.error(`hideStatBlockStat(): ERROR while hiding "${statName}" (${error})`);
+	//Iterates through the settings and call the appropriate methods for setting the score visibility
+	defineStatsVisibility(settings = this.settings){
+		//itarating through each value of settings
+		//settings is only supposed to have 2 values max, so I don't see a problem in making a multilayered "for" statement
+		for(let setting of settings){
+			let statList = setting.list;
+			console.log(`defineStatsVisibility(): STARTING ${setting.action.toUpperCase()}`)
+
+			//iterating through the entire list defined in the setting, making sifferent actions depending on the setting.action
+			for(let statName of statList){
+				try{
+					let stat = this.scoreDetails[statName];
+					if(stat.element){
+						console.log(`defineStatsVisibility(): ${setting.action} "${statName}"`);
+
+						//setting up the value that we're gonna set to the stat
+						let newValue;
+						if(setting.action == "hide")
+							newValue = (statName == "ratio_bar") ? "hidden" : this.scorePlaceholder;
+						else if(setting.action == "show")
+							newValue = (statName == "ratio_bar") ? "visible" : this.scoreDetails[statName].value;
+
+						//calling each function to set the score
+						//STATS BLOCK
+						if(stat.element.statsBlock)
+							this.updateStatsBlockScore(statName, newValue);
+						//LEFT SIDE
+						if(stat.element.leftSide)
+							this.updateLeftSideScore(statName, newValue);
+						//REVIEWS
+						if(stat.element.reviewTab)
+							this.updateReviewStat(statName, newValue);
+
+					}else{
+						console.log(`defineStatsVisibility(): ${setting.action} "${statName}" failed because "${statName}" is undefined. Ignoring.`);
+					}
+				}catch(error){
+					console.error(`defineStatsVisibility(): ${setting.action} "${statName}" threw an error`);
+					console.error(error);
+				}
 			}
 		}
+		console.log("defineStatsVisibility(): FINISHED");
+	}
+	/*
+		Updates the visibility of elements from the STATS BLOCK
+		Receives the statName and the value that's going to be set in the stat's element
+	*/
+	updateStatsBlockScore(statName, newValue){
+		let statElement = this.scoreDetails[statName].element.statsBlock;
+		newValue = newValue.replace("\n", "").trim(); //removing spaces and "\n" from the newValue so the statsBlock won't change
+		if(statName == "users")
+			statElement.setAttribute("data-user", `${newValue} users`);
+		else
+			statElement.replaceChildren(newValue);
 	}
 
 	/*
-		Receives an array with stat names, and hides every stat informed in the array
-		if statList is "all" or ["all"] it will hide every single stat from the left side bar
-
-		statList examples:
-		["favorites", "score", "popularity"]
-		["users"]
-		["all"]
-		"all"
+	    Updates the visibility of elements from the LEFT SIDE BAR
+		Receives the statName and the value that's going to be set in the stat's element
 	*/
-	hideSidebarStats(statList){
-		//if statList is "all", all elements from the left side bar will be hidden
-		if(statList === "all" || statList[0] == "all")
-			statList = this.scoreDetails.map((e)=>{
-				return e.type;
-			});
-
-		//iterating through the entire statList and hiding all the elements 
-		for(let statName of statList){		
-			console.log(`hideSidebarStat(): HIDING "${statName}" stat`);
-			//getting the actual DOMElement/text node of the stat we want to hide
-			let statElement = this.scoreDetails.filter((e)=>{
-				return e.type == statName;
-			});
-			statElement = statElement[0].element.leftSide;	
-
-			try{
-				//replacing the textContent of the stat element, effectively hiding the stat.
-				switch(statName){
-					case "users":
-						//The first if is for when the text node is COMPLETE
-						//e.g: #text: "(scored by 200 users)"
-
-						//the else is for when the text node is separated
-						//e.g: #text: "(scored by " | #text: "200 users)" <-- the one we're altering						
-						if(statElement.textContent.includes("(scored by"))
-							statElement.textContent = `\n(scored by ${this.scorePlaceholder} users)\n`;
-						else
-							statElement.textContent = `\n ${this.scorePlaceholder} users)\n`;
-						break;
-					case "score":						
-						statElement.textContent = this.scorePlaceholder;
-						break;
-					case "rank":
-						statElement.textContent = `\n ${this.scorePlaceholder}`;
-						break;	
-					default: 
-						statElement.textContent = `\n ${this.scorePlaceholder}\n`;	
-				}
-			}catch(error){
-				console.error(`hideSidebarStat(): ERROR while hiding "${statName}" (${error})`);
-			}				
+	updateLeftSideScore(statName, newValue){
+		let statElement = this.scoreDetails[statName].element.leftSide;
+		switch(statName){
+			case "users":
+				//The first if is for when the text node is COMPLETE
+				//e.g: #text: "(scored by 200 users)"
+				//the else is for when the text node is separated
+				//e.g: #text: "(scored by " | #text: "200 users)" <-- the one we're altering
+				if(statElement.textContent.includes("(scored by"))
+					statElement.textContent = `\n(scored by ${newValue} users)\n`;
+				else
+					statElement.textContent = `${newValue} users)\n`;
+				break;
+			case "score":
+				statElement.textContent = newValue;
+				break;
+			case "rank":
+				statElement.textContent = `\n ${newValue}`;
+				break;
+			default:
+				statElement.textContent = `\n ${newValue}\n`;
 		}
+
 	}
 
-	//get the text node from the stat from the left side bar
-	getSidebarTextNode(elementName) {
-		elementName = elementName.toLowerCase(); //putting the parameter in lowercase				
+	/*
+	 * Updates the visibility of elements from the REVIEW STATS BAR
+	   Receives the statName and the value that's going to be set in the stat's element*
+	 */
+	updateReviewStat(statName, newValue){
+		let statElement = this.scoreDetails[statName].element.reviewTab;
+		if(statName == "ratio_bar")
+			statElement.style.visibility = newValue;
+		else
+			statElement.textContent = newValue;
+	}
+
+	//get the element of the stat from the left side bar
+	getSidebarElement(elementName) {
+		elementName = elementName.toLowerCase(); //putting the parameter in lowercase
 
 		//getting a list of all .spaceit_pad from the left side bar
-		let leftElements = Array.from(this.leftSidebar.querySelectorAll(".spaceit_pad"));		
-		
+		let leftElements = Array.from(this.leftSidebar.querySelectorAll(".spaceit_pad"));
+
 		/*
-		getting the DIV that has the value informed in the parameter		
+		getting the <div> that has the value informed in the parameter
 		All of the score DOM elements on the left side bar have the .spaceit_pad
 		But none of them  have any unique class or id to help us run a querySelector on each one
 
-		Therefore, to get the value we need, we need to filter the elements specifically by the 
+		Therefore, to get the value we need, we need to filter the elements specifically by the
 		text present in the <span> element inside .spaceit_pad.
 
-		Not the prettiest solution but it's all that I could figure out, 
-		if you're reading this, I'm open for suggestions. 		
+		Not the prettiest solution but it's all that I could figure out,
+		if you're reading this, I'm open for suggestions.
 		*/
 		let element;
 		if(elementName == "users"){
@@ -401,7 +417,7 @@ class ScoreHider{
 							
 				return value[0];	
 			}catch(error){
-				console.error(`ERROR: getSidebarTextNode() error when trying to retrieve "${elementName}" (${error})`);
+				console.error(`ERROR: getSidebarElement() error when trying to retrieve "${elementName}" (${error})`);
 			}
 		}
 		//if the element is undefined, return null
@@ -409,32 +425,33 @@ class ScoreHider{
 		return null;
 		
 	}
-	
 
-	//hides elements from the REVIEW section of the page
-	hideReviewStats(statList){
-		//if it's "all", gets a list of every single review stat
-		if(statList === "all" || statList[0] == "all")
-			statList = Object.keys(this.reviewDetails);
 
-		//iterating through each one and hiding the stats
-		for(let statName of statList){			
-			try{
-				console.log(`hideReviewStats(): HIDING "${statName}" stat`);					
-				if(statName == "ratio_bar"){
-					this.reviewDetails[statName].style.visibility = "hidden";
-				}else{
-					this.reviewDetails[statName].textContent = this.scorePlaceholder;
-				}
-			}catch(error){
-				console.error(`hideReviewStats(): ERROR while hiding "${statName}" (${error})`);
+	//Starts the listener of the scoreHider, this is intended for when the user interacts with the settings.
+	startListeners(){
+
+		document.addEventListener("keydown", (e)=>{
+			//TODO URGENT!! REMOVE THIS LISTENER IN THE FINAL RELEASE
+			//this listener is for debugging purposes ONLY. It HAS to be removed in the final release, otherwise issues could arise
+			switch(e.key){
+				case "h":
+					this.defineStatsVisibility([{"action": "hide", "list": Object.keys(this.scoreDetails)}]);
+					break;
+				case "s":
+					this.defineStatsVisibility([{"action": "show", "list": Object.keys(this.scoreDetails)}]);
+					break;
+				case "b":
+					this.defineStatsVisibility([
+						{"action": "hide", "list": Object.keys(this.scoreDetails)},
+						{"action": "show", "list": Object.keys(this.scoreDetails)}
+					]);
+					break;
 			}
-		}
-		
+		});
 	}
 }
 
-//instanciating the ScoreHider class, making it execute the commands.
+//instantiating the ScoreHider class, making it execute the commands.
 let score = new ScoreHider();
 
 
