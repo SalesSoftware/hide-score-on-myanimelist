@@ -1,6 +1,6 @@
 /**
  * 
- * TODO 3) Create an Icon for the project
+ * TODO Create an Icon for the project
  * 
 */
 class ScoreHider{	
@@ -48,14 +48,13 @@ class ScoreHider{
 					  if it has html, then we can safely use innerText, as it gets all the text RESPECTING visibility definitions.
 					*/
 					"value": this.getSidebarElement("users")?.innerHTML
-								? this.getSidebarElement("users")?.innerText.replace(/[^0-9,-]/g, "") // this extracts only the number
-								: this.getSidebarElement("users")?.textContent.replace(/[^0-9,-]/g, "") // this extracts only the number
+								? this.getSidebarElement("users")?.innerText.replace(/[^0-9,-]/g, "") // this extracts only the numbers, "-" and ","
+								: this.getSidebarElement("users")?.textContent.replace(/[^0-9,-]/g, "") // this extracts only the numbers, "-" and ","
 				},
 				"rank":{
 					"element": {
 						"statsBlock": this.divStatsBlock?.querySelector(".numbers.ranked strong"),
 						"leftSide": this.getSidebarElement("ranked")
-
 					},
 					"value": this.getSidebarElement("ranked")?.textContent
 				},
@@ -110,7 +109,6 @@ class ScoreHider{
 						"reviewTab": this.infoReviewHeader?.querySelector(".review-ratio__bar")
 					}
 				},
-
 			};
 
 		    console.log("scoreDetails");
@@ -119,8 +117,6 @@ class ScoreHider{
 		}catch(error){
 			console.error(`${error}`);			
 		}
-		
-		
 	}	
 	
 	//sets up the system to start the score hiding process
@@ -138,7 +134,7 @@ class ScoreHider{
 
 			//If there was no error, but we still didn't get the settings, then it means it's the first time the extension
 			//is being run.
-			if(!this.settings?.hide || !this.settings?.show){
+			if(this.settings == undefined || this.settings == null){
 				console.log("Couldn't find settings data.\nStoring settings for the first time.");
 				let result = await this.setSettingsFirstUse(); //sets the settings for first time
 
@@ -233,10 +229,7 @@ class ScoreHider{
 	async setSettingsFirstUse(){
 
 		//creating list that we're going to store
-		let dataToStore = [
-			{"action": "hide", "list": Object.keys(this.scoreDetails)},//by default we hide every single stat
-			{"action": "show", "list": []},
-		];
+		let dataToStore = Object.keys(this.scoreDetails);//by default we hide every single stat
 
 		let result = await this.setSettings(dataToStore); //storing settings
 		if(result.success)
@@ -247,25 +240,34 @@ class ScoreHider{
 
 
 	//Iterates through the settings and call the appropriate methods for setting the score visibility
-	defineStatsVisibility(settings = this.settings){
-		//itarating through each value of settings
+	//TODO: Make it so the showList can also be passed as a parameter, it'll be important when put listeners on the storage
+	defineStatsVisibility(hideList = this.settings /*, showList = []*/){
+		//if(!showList)
+		//We infer that the values that aren't in hideList are to be showed instead.
+		//So this code gets every stat that is not in hideList.
+		let showList = Object.keys(this.scoreDetails).filter((stat)=>!hideList.includes(stat));
+		let fullList = [
+			{"action": "hide", "list":hideList},
+			{"action": "show", "list":showList}
+		];
+		//itarating through each value of fullList
 		//settings is only supposed to have 2 values max, so I don't see a problem in making a multilayered "for" statement
-		for(let setting of settings){
-			let statList = setting.list;
-			console.log(`defineStatsVisibility(): STARTING ${setting.action.toUpperCase()}`)
+		for(let currentList of fullList){
+			let statList = currentList.list;
+			console.log(`defineStatsVisibility(): STARTING ${currentList.action.toUpperCase()}`)
 
-			//iterating through the entire list defined in the setting, making sifferent actions depending on the setting.action
+			//iterating through the entire list defined in the currentList, making sifferent actions depending on the currentList.action
 			for(let statName of statList){
 				try{
 					let stat = this.scoreDetails[statName];
 					if(stat.element){
-						console.log(`defineStatsVisibility(): ${setting.action} "${statName}"`);
+						console.log(`defineStatsVisibility(): ${currentList.action} "${statName}"`);
 
 						//setting up the value that we're gonna set to the stat
 						let newValue;
-						if(setting.action == "hide")
+						if(currentList.action == "hide")
 							newValue = (statName == "ratio_bar") ? "hidden" : this.scorePlaceholder;
-						else if(setting.action == "show")
+						else if(currentList.action == "show")
 							newValue = (statName == "ratio_bar") ? "visible" : this.scoreDetails[statName].value;
 
 						//calling each function to set the score
@@ -280,10 +282,10 @@ class ScoreHider{
 							this.updateReviewStat(statName, newValue);
 
 					}else{
-						console.log(`defineStatsVisibility(): ${setting.action} "${statName}" failed because "${statName}" is undefined. Ignoring.`);
+						console.log(`defineStatsVisibility(): ${currentList.action} "${statName}" failed because "${statName}" is undefined. Ignoring.`);
 					}
 				}catch(error){
-					console.error(`defineStatsVisibility(): ${setting.action} "${statName}" threw an error`);
+					console.error(`defineStatsVisibility(): ${currentList.action} "${statName}" threw an error`);
 					console.error(error);
 				}
 			}
@@ -435,16 +437,13 @@ class ScoreHider{
 			//this listener is for debugging purposes ONLY. It HAS to be removed in the final release, otherwise issues could arise
 			switch(e.key){
 				case "h":
-					this.defineStatsVisibility([{"action": "hide", "list": Object.keys(this.scoreDetails)}]);
+					this.defineStatsVisibility(Object.keys(this.scoreDetails));
 					break;
 				case "s":
-					this.defineStatsVisibility([{"action": "show", "list": Object.keys(this.scoreDetails)}]);
+					this.defineStatsVisibility([]);
 					break;
 				case "b":
-					this.defineStatsVisibility([
-						{"action": "hide", "list": Object.keys(this.scoreDetails)},
-						{"action": "show", "list": Object.keys(this.scoreDetails)}
-					]);
+					this.defineStatsVisibility(["score", "favorites"]);
 					break;
 			}
 		});
