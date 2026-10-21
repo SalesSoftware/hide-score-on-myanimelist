@@ -143,7 +143,7 @@ class ScoreHider{
 				else
 					throw Error(`start(): Error when storing settings for the first time (${result?.error})`);
 			}
-			console.log("settings");
+			console.log("settings 2nd");
 			console.log(this.settings);
 
 			this.defineStatsVisibility(this.settings); //starts the hiding/showing proccess based on the settings
@@ -165,7 +165,7 @@ class ScoreHider{
 
 	//only for debugging, returns all values in storage
 	getAllStorage(){
-		return browser.storage.sync.get(null).then(data => console.log(data));
+		return browser.storage.sync.get(null).then(data => data);
 	}
 
 	//searches for the scorehider_settings in storage, and returns what it finds
@@ -241,11 +241,7 @@ class ScoreHider{
 
 	//Iterates through the settings and call the appropriate methods for setting the score visibility
 	//TODO: Make it so the showList can also be passed as a parameter, it'll be important when put listeners on the storage
-	defineStatsVisibility(hideList = this.settings /*, showList = []*/){
-		//if(!showList)
-		//We infer that the values that aren't in hideList are to be showed instead.
-		//So this code gets every stat that is not in hideList.
-		let showList = Object.keys(this.scoreDetails).filter((stat)=>!hideList.includes(stat));
+	defineStatsVisibility(hideList = [], showList = []){
 		let fullList = [
 			{"action": "hide", "list":hideList},
 			{"action": "show", "list":showList}
@@ -431,10 +427,9 @@ class ScoreHider{
 
 	//Starts the listener of the scoreHider, this is intended for when the user interacts with the settings.
 	startListeners(){
-
+		//TODO URGENT!! REMOVE THIS LISTENER IN THE FINAL RELEASE
+		//this listener is for debugging purposes ONLY. It HAS to be removed in the final release, otherwise issues could arise
 		document.addEventListener("keydown", (e)=>{
-			//TODO URGENT!! REMOVE THIS LISTENER IN THE FINAL RELEASE
-			//this listener is for debugging purposes ONLY. It HAS to be removed in the final release, otherwise issues could arise
 			switch(e.key){
 				case "h":
 					this.defineStatsVisibility(Object.keys(this.scoreDetails));
@@ -447,10 +442,42 @@ class ScoreHider{
 					break;
 			}
 		});
+
+		//STORAGE UPDATE LISTENER
+		//this listener will be triggered as soon as a value in the popup is checked/unchecked
+		browser.storage.sync.onChanged.addListener((changes)=>{
+			if(changes.scorehider_settings){
+				let oldValue = changes.scorehider_settings.oldValue;
+				let newValue = changes.scorehider_settings.newValue;
+
+				console.log("change old value");
+				console.log(oldValue);
+				console.log("change new value");
+				console.log(newValue);
+
+
+				//The code below makes sure we'll only act upon the elements that were added/removed
+				//otherwise this.defineStatsVisibility would trigger a "show" command for every single element that wasn't hidden, or
+				//trigger a "hide" for every single element that wasn't shown.
+
+				//Getting all values from the newList that AREN'T in the old list
+				let hideList = newValue.filter((value)=>!oldValue.includes(value));
+
+				//Getting all values from the oldList that AREN'T in the new list
+				let showList = oldValue.filter((value)=>!newValue.includes(value));
+
+				console.log("hidelist + showlist");
+				console.log({
+					"hidelist": hideList,
+					"showlist": showList
+				})
+
+				this.defineStatsVisibility(hideList, showList);
+				this.settings = newValue;
+			}
+		})
 	}
 }
 
 //instantiating the ScoreHider class, making it execute the commands.
 let score = new ScoreHider();
-
-

@@ -3,11 +3,16 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Test</title>	
+	<title>Popup MAL score hider</title>
 	<link rel="stylesheet" type="text/css" href="css/popup-menu.css">
-	<script type="module" src="js/popup-menu.js"></script>
+	<script src="js/popup-menu.js"></script>
 </head>
 <body>
+	<div class="errorTab">
+		<p>
+			<b> <!-- Where the error is transcribed --></b>
+		</p>
+	</div>
 	<main> 
 		<!-- All options -->
 		<div class="stat-option">
@@ -35,26 +40,25 @@
 			<label for="favorites"> Favorites </label>
 		</div>
 		<div class="stat-option">
-			<input type="checkbox" id="ratio-bar" name="ratio-bar">
-			<label for="ratio-bar"> Review Ratio Bar </label>
+			<input type="checkbox" id="ratio_bar" name="ratio_bar">
+			<label for="ratio_bar"> Review Ratio Bar </label>
 		</div>
 		<div class="stat-option">
 			<input type="checkbox" id="recommended" name="recommended">
 			<label for="recommended"> Recommended </label>
 		</div>
 		<div class="stat-option">
-			<input type="checkbox" id="mixed-feelings" name="mixed-feelings">
-			<label for="mixed-feelings"> Mixed Feelings </label>
+			<input type="checkbox" id="mixed" name="mixed">
+			<label for="mixed"> Mixed Feelings </label>
 		</div>
 		<div class="stat-option">
-			<input type="checkbox" id="not-recommended" name="not-recommended">
-			<label for="not-recommended"> Not Recommended </label>
+			<input type="checkbox" id="not_recommended" name="not_recommended">
+			<label for="not_recommended"> Not Recommended </label>
 		</div>
 		<div class="stat-option">
-			<input type="checkbox" id="review-amount" name="review-amount">
-			<label for="review-amount"> Review Amount </label>
+			<input type="checkbox" id="review_amount" name="review_amount">
+			<label for="review_amount"> Review Amount </label>
 		</div>
-		<button type="button">Save</button>
 	</main>
 </body>
 </html>

@@ -5,3 +5,7 @@ main{
 	display: flex;
 	flex-direction: column;
 }
+/*The tab where we trascribe the errors*/
+.errorTab{
+	display: none;
+}
