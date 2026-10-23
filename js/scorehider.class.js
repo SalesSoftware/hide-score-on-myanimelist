@@ -30,7 +30,7 @@ class ScoreHider{
 				"score":{
 						"element": {
 							"statsBlock": this.divStatsBlock?.querySelector(".score-label"),
-							"leftSide": this.leftSidebar.querySelector(".score-label")
+							"leftSide": this.leftSidebar?.querySelector(".score-label")
 						},
 						"value": this.leftSidebar?.querySelector(".score-label").textContent
 				},
@@ -111,11 +111,79 @@ class ScoreHider{
 				},
 			};
 
+			//seasonal tab, it also refers to other pages like manga/magazine/282/Shounen_Champion_Monthly for example
+			this.seasonalTab = document.querySelector(".js-categories-seasonal");
+			this.seasonalTabElements = {}; //will store the stats and other information of ALL anime entries in the seasonal anime page.
+			if(this.seasonalTab){
+				//a seasonal anime page has many "blocks" for each anime entry. These blocks have the class .seasonal-anime (even for manga)
+				//therefore we need to iterate through EVERY block and store the stats.
+				let elements = this.seasonalTab.querySelectorAll(".seasonal-anime");
+				for(let element of elements){
+					try{
+						//with this we get the ID of the anime/manga itself. This will be used as an identifier when storing the stats.
+						let animeId = element.querySelector(".genres.js-genre").id;
+						if(!animeId){
+							console.error("ERROR: Could not find the id of the anime element.\nIgnoring element");
+							console.log(element);
+							continue;
+						}
+
+						//the "skeleton" of each object that will be stored in this.seasonalTabElements
+						let seasonalTabValues = {
+							"score": {
+								"value": undefined,
+								"element": undefined
+							},
+							"members": {
+								"value": undefined,
+								"element": undefined
+							}
+						};
+
+
+						//the next two expressions get the TEXT NODE where the "score" and "members" stats are stored
+						//we sadly cannot gather the DOM element itself, as these values have a <i> tag inside them, making it impossible
+						//for us to replace the stats value with innerText or textContent without removing the <i> tag
+
+						//by using a text node, we guarantee that we are altering ONLY the text value
+
+						//REGEX: gets the text node that has numbers [0-9] OR the exact text "N/A"
+						seasonalTabValues.score.element = Array.from(element.querySelector(".scormem-item.score").childNodes)
+																.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+
+						seasonalTabValues.members.element = Array.from(element.querySelector(".scormem-item.member").childNodes)
+															.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+
+						//getting the value of the scores
+						seasonalTabValues.score.value = seasonalTabValues.score.element?.textContent.replace("\n", "").trim();
+						seasonalTabValues.members.value = seasonalTabValues.members.element?.textContent.replace("\n", "").trim();
+
+						//storing the object into this.seasonalTabElements, using the anime id as an identifier
+						this.seasonalTabElements[animeId] = seasonalTabValues;
+					}catch(error){
+						console.error(error);
+						console.log(element);
+					}
+				}
+			}
+
+
+
+			console.log("seasonalTab");
+			console.log(this.seasonalTab);
+
+			console.log("seasonalTabElements");
+			console.log(this.seasonalTabElements);
+
+			console.log("seasonalTabElements size");
+			console.log(Object.keys(this.seasonalTabElements).length);
+
 		    console.log("scoreDetails");
 			console.log(this.scoreDetails);
+
 		    this.start();
 		}catch(error){
-			console.error(`${error}`);			
+			console.error(error);
 		}
 	}	
 	
@@ -143,10 +211,14 @@ class ScoreHider{
 				else
 					throw Error(`start(): Error when storing settings for the first time (${result?.error})`);
 			}
-			console.log("settings 2nd");
+			console.log("settings");
 			console.log(this.settings);
 
-			this.defineStatsVisibility(this.settings); //starts the hiding/showing proccess based on the settings
+			//starts the hiding/showing proccess based on the settings
+			if(this.seasonalTab)
+				this.setSeasonalAnimeStatsVisibility(this.settings);
+			else
+				this.setAnimePageStatsVisibility(this.settings);
 
 			this.startListeners(); //Initialize the listeners
 		}catch(error){
@@ -156,10 +228,15 @@ class ScoreHider{
 			//making the elements hidden the preload-hide.css visible again
 			if(this.divStatsBlock)
 				this.divStatsBlock.style.opacity = "1";
+
 			if(this.leftSidebar)
 				this.leftSidebar.style.opacity = "1";
+
 			if(this.infoReviewHeader)
 				this.infoReviewHeader.style.opacity = "1";
+
+			if(this.seasonalTab)
+				this.seasonalTab.style.opacity = "1";
 		}
 	}
 
@@ -240,8 +317,7 @@ class ScoreHider{
 
 
 	//Iterates through the settings and call the appropriate methods for setting the score visibility
-	//TODO: Make it so the showList can also be passed as a parameter, it'll be important when put listeners on the storage
-	defineStatsVisibility(hideList = [], showList = []){
+	setAnimePageStatsVisibility(hideList = [], showList = []){
 		let fullList = [
 			{"action": "hide", "list":hideList},
 			{"action": "show", "list":showList}
@@ -250,14 +326,14 @@ class ScoreHider{
 		//settings is only supposed to have 2 values max, so I don't see a problem in making a multilayered "for" statement
 		for(let currentList of fullList){
 			let statList = currentList.list;
-			console.log(`defineStatsVisibility(): STARTING ${currentList.action.toUpperCase()}`)
+			console.log(`setAnimePageStatsVisibility(): STARTING ${currentList.action.toUpperCase()}`);
 
 			//iterating through the entire list defined in the currentList, making sifferent actions depending on the currentList.action
 			for(let statName of statList){
 				try{
 					let stat = this.scoreDetails[statName];
 					if(stat.element){
-						console.log(`defineStatsVisibility(): ${currentList.action} "${statName}"`);
+						console.log(`setAnimePageStatsVisibility(): ${currentList.action} "${statName}"`);
 
 						//setting up the value that we're gonna set to the stat
 						let newValue;
@@ -278,15 +354,57 @@ class ScoreHider{
 							this.updateReviewStat(statName, newValue);
 
 					}else{
-						console.log(`defineStatsVisibility(): ${currentList.action} "${statName}" failed because "${statName}" is undefined. Ignoring.`);
+						console.log(`setAnimePageStatsVisibility(): ${currentList.action} "${statName}" failed because "${statName}" is undefined. Ignoring.`);
 					}
 				}catch(error){
-					console.error(`defineStatsVisibility(): ${currentList.action} "${statName}" threw an error`);
+					console.error(`setAnimePageStatsVisibility(): ${currentList.action} "${statName}" threw an error`);
 					console.error(error);
 				}
 			}
 		}
-		console.log("defineStatsVisibility(): FINISHED");
+		console.log("setAnimePageStatsVisibility(): FINISHED");
+	}
+
+	//sets the visibility of "score" and/or "members" in the seasonal anime page
+	//it also works with manga magazine lists.
+ 	setSeasonalAnimeStatsVisibility(hideList = [], showList = []){
+
+		//making an array of all anime ids that were stored in this.seasonalTabElements
+		let seasonalIds = Object.keys(this.seasonalTabElements);
+
+		//defining the "function" that we're going to run for hiding the elements
+		let scoreVisibility = (ids, statList, action) =>{
+				console.log(`setSeasonalAnimeStatsVisibility(): STARTING TO ${action.toUpperCase()} THE ELEMENTS`);
+				//TODO: This is a pretty heavy iteration. For example: If there's 300 anime entries in the fall 2010 page, then this will run
+				//300 times. Each time we try to hide or show the elements, it'll run 300 times.
+				//I tried my best to make it concise, but I don't know if there could be possible performance issues.
+				//since it works just fine for me, I'll just proceed with the development normally, but this sections must be closely monitored.
+				for(let id of ids){
+					//in the seasonal anime screen, the only stats are "score" and "members"
+					for(let stat of ["score", "members"]){
+						try{
+							//define if we're going to HIDE or SHOW the stat
+							if(statList.includes(stat))
+								this.seasonalTabElements[id][stat].element.textContent = action == "hide"
+																						? this.scorePlaceholder
+																						: this.seasonalTabElements[id][stat].value;
+						}catch(error){
+							console.error(`setSeasonalAnimeStatsVisibility(): There was an error while trying to ${action.toUpperCase()} the ${stat.toUpperCase()} of the anime/manga id ${id}`);
+							console.error(error);
+							break;
+						}
+					}
+				}
+				console.log(`setSeasonalAnimeStatsVisibility(): FINISHED "${action.toUpperCase()}"`);
+		}
+
+		//this is a bit ugly, but honestly, who cares?
+		//way better than having 3 nested for loops
+		if(hideList.length > 0)
+			scoreVisibility(seasonalIds, hideList, "hide");
+		if(showList.length > 0)
+			scoreVisibility(seasonalIds, showList, "show");
+
 	}
 	/*
 		Updates the visibility of elements from the STATS BLOCK
@@ -344,6 +462,11 @@ class ScoreHider{
 
 	//get the element of the stat from the left side bar
 	getSidebarElement(elementName) {
+		//if we're not in anime/manga page, the left side bar doesn't exist therefore we need to make this function return undefined
+		//to prevent errors
+		if(!this.leftSidebar)
+			return undefined;
+
 		elementName = elementName.toLowerCase(); //putting the parameter in lowercase
 
 		//getting a list of all .spaceit_pad from the left side bar
@@ -429,19 +552,19 @@ class ScoreHider{
 	startListeners(){
 		//TODO URGENT!! REMOVE THIS LISTENER IN THE FINAL RELEASE
 		//this listener is for debugging purposes ONLY. It HAS to be removed in the final release, otherwise issues could arise
-		document.addEventListener("keydown", (e)=>{
-			switch(e.key){
-				case "h":
-					this.defineStatsVisibility(Object.keys(this.scoreDetails));
-					break;
-				case "s":
-					this.defineStatsVisibility([]);
-					break;
-				case "b":
-					this.defineStatsVisibility(["score", "favorites"]);
-					break;
-			}
-		});
+		// document.addEventListener("keydown", (e)=>{
+		// 	switch(e.key){
+		// 		case "h":
+		// 			this.setAnimePageStatsVisibility(Object.keys(this.scoreDetails));
+		// 			break;
+		// 		case "s":
+		// 			this.setAnimePageStatsVisibility([]);
+		// 			break;
+		// 		case "b":
+		// 			this.setAnimePageStatsVisibility(["score", "favorites"]);
+		// 			break;
+		// 	}
+		// });
 
 		//STORAGE UPDATE LISTENER
 		//this listener will be triggered as soon as a value in the popup is checked/unchecked
@@ -455,9 +578,8 @@ class ScoreHider{
 				console.log("change new value");
 				console.log(newValue);
 
-
 				//The code below makes sure we'll only act upon the elements that were added/removed
-				//otherwise this.defineStatsVisibility would trigger a "show" command for every single element that wasn't hidden, or
+				//otherwise this.setAnimePageStatsVisibility would trigger a "show" command for every single element that wasn't hidden, or
 				//trigger a "hide" for every single element that wasn't shown.
 
 				//Getting all values from the newList that AREN'T in the old list
@@ -466,14 +588,24 @@ class ScoreHider{
 				//Getting all values from the oldList that AREN'T in the new list
 				let showList = oldValue.filter((value)=>!newValue.includes(value));
 
+				if(this.seasonalTab){
+					//this makes sure the arguments are either "score" or "members", or both
+					hideList = hideList.filter((value)=>value=="score"||value=="members");
+					showList = showList.filter((value)=>value=="score"||value=="members");
+					this.setSeasonalAnimeStatsVisibility(hideList, showList);
+				}else{
+					this.setAnimePageStatsVisibility(hideList, showList);
+				}
+
+				//just logging this as an object so it's more convenient to compare hideList with showList
 				console.log("hidelist + showlist");
 				console.log({
 					"hidelist": hideList,
 					"showlist": showList
-				})
+				});
 
-				this.defineStatsVisibility(hideList, showList);
 				this.settings = newValue;
+
 			}
 		})
 	}

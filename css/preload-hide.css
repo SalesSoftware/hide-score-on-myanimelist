@@ -9,15 +9,18 @@ After score-hider.js finishes hiding the scores, this element is set to visible 
 that the users will absolutely never see the scores unless they want to. 
 
  */
-div.stats-block,
-div.leftside,
-div.mal-navbar{
+.stats-block,
+.leftside,
+.mal-navbar,
+.js-categories-seasonal
+{
 	/*
 		[05/10/2026] - Changing from visibility:hidden to opacity:0
 		Visiblity: hidden makes it impossible to run innerText on the js, which stops the scores from 
 		being stored corretly. opacity: 0; fixes that problem.
 
 		[10/10/2026] - Added leftside and mal-navbar (user reviews) to the pre-load hiding 
+		[22/10/2026] - Added .js-categories-seasonal (page that lists all anime in a season) to the pre-load hiding
 	*/
 	opacity: 0; 
 }
