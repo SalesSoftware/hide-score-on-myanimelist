@@ -4,6 +4,10 @@
  * 
 */
 class ScoreHider{	
+	/**
+	 * Sets up the variables that will be used in the rest of the class, and then calls {@link start()}
+	 * @constructor
+	 */
 	constructor(){
 		//******************** DEFINING THE GLOBAL VARIABLES******************************************							
 		//IMPORTANT: .stats-block is automatically hidden by css/preoload-hide.css
@@ -187,7 +191,18 @@ class ScoreHider{
 		}
 	}	
 	
-	//sets up the system to start the score hiding process
+
+	/**
+	 * Gets the value of this.settings from storage (calls {@link setSettingsFirstUse()} if there's no settings in storage) and then calls the
+	 * appropriate methods to hide/show the stats upon getting in the screen, Like {@link setSeasonalAnimeStatsVisibility()} and
+	 * {@link setAnimePageStatsVisibility()}.
+	 *
+	 * Initializes the project's listeners by calling {@link startListeners()}
+	 *
+	 * And lastly, it reverts the changes of "preload-hide.css", making elements in the page visible again.
+	 * This is done in the "finally" codeblock.
+	 * @async
+	 */
 	async start(){				
 		// await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR TESTS *ONLY*.
 
@@ -240,12 +255,19 @@ class ScoreHider{
 		}
 	}
 
-	//only for debugging, returns all values in storage
+	/**
+	 * Returns all values from storage.
+	 * This method is intended for debugging purposes.
+	 * @returns {Promise<Object>} - Every single object in storage
+	 */
 	getAllStorage(){
 		return browser.storage.sync.get(null).then(data => data);
 	}
 
-	//searches for the scorehider_settings in storage, and returns what it finds
+	/**
+	 * Searches for the "scorehider_settings" position in storage, and returns the value it finds
+	 * @returns {Promise<Array>} - contains the name of every stat that this class is supposed to hide.
+	 */
 	getSettings(){
 		//browser.storage.sync.get("scorehider_settings")
 		//Promise.reject(new Error("Simulated error2"))
@@ -256,18 +278,13 @@ class ScoreHider{
 		);
 	}
 
-	//stores the settings in storage, and returns an object that tells if the storage process failed or succeeded
-	/*
-	 * RETURN EXAMPLES:
-	 * {
-	 * 	"success": true,
-	 *  "error": undefined
-	 * }
+	/**
+	 * updates the "scorehider_settings" position in storage with the informed parameter
+	 * then it returns an object that tells if the update operation was successful
 	 *
-	 * {
-	 * 	"success": false,
-	 *  "error": Error
-	 * }
+	 * @async
+	 * @param {Array} scorehider_settings - The value that's going to be stored in the "scorehider_settings" position in storage
+	 * @returns {Promise<{"success": true, "error": undefined} | {"success": false, "error": Error}>}
 	 */
 	async setSettings(scorehider_settings){
 		//browser.storage.sync.set({scorehider_settings})
@@ -287,21 +304,15 @@ class ScoreHider{
 		return {"success": success, "error": errorMsg};
 	}
 
-	//stores the settings if there isn't any stored.
-	//it returns the result of this.setSettings(), but if it succeeds a value "dataStored" is attached.
-	/*
-	 * RETURN EXAMPLES:
-	 * {
-	 * 	"success": false,
-	 *  "error": Error
-	 * }
+	/**
+	 *  Makes an array of every single stat, and stores this array in the "scorehider_settings" position of storage
+	 *  by calling {@link setSettings()}.
 	 *
-	 * {
-	 * 	"success": true,
-	 *  "error": undefined,
-	 *  "dataStored": [{"action": "hide", "list": [...]},{"action": "show", "list": [...]}]
-	 * }
-	 *
+	 *	@async
+	 *  @returns {Promise<
+	 * 		{"success": true, "error": undefined, "dataStored": [...]} |
+	 *  	{"success": false, "error": Error}
+	 *  >} - Returns the value of {@link setSettings()}, but attaches "dataStored" to the Object if the storage was successful
 	 */
 	async setSettingsFirstUse(){
 
@@ -316,7 +327,20 @@ class ScoreHider{
 	}
 
 
-	//Iterates through the settings and call the appropriate methods for setting the score visibility
+
+
+	/**
+	 * hides/shows the elements in the ANIME/MANGA page.
+	 * Since the anime/manga page contains multiple "blocks" with different stats, this method calls multiple appropriate methods to hide
+	 * each stat on the different sections of the page. The current method calls are:
+	 * {@link updateStatsBlockScore()}: hides/shows the stats on the stats block (the "main" stat section that highlights the score of the anime)
+	 * {@link updateLeftSideScore()}: hides/shows the stats on the left side bar "statistics" tab
+	 * {@link updateReviewScore()}: hides/shows the stats in the "reviews" section. *IMPORTANT*, it won't hide the reveals, only the STATS in that
+	 * section, like the amount of recommended reviews, the ratio bar, etc. For more information check the comments on updateReviewScore()
+	 *
+	 * @param {Array} hideList - Array containing the name of the elements that are going to be HIDDEN.
+	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
+	 */
 	setAnimePageStatsVisibility(hideList = [], showList = []){
 		let fullList = [
 			{"action": "hide", "list":hideList},
@@ -351,7 +375,7 @@ class ScoreHider{
 							this.updateLeftSideScore(statName, newValue);
 						//REVIEWS
 						if(stat.element.reviewTab)
-							this.updateReviewStat(statName, newValue);
+							this.updateReviewScore(statName, newValue);
 
 					}else{
 						console.log(`setAnimePageStatsVisibility(): ${currentList.action} "${statName}" failed because "${statName}" is undefined. Ignoring.`);
@@ -365,8 +389,17 @@ class ScoreHider{
 		console.log("setAnimePageStatsVisibility(): FINISHED");
 	}
 
-	//sets the visibility of "score" and/or "members" in the seasonal anime page
-	//it also works with manga magazine lists.
+	/**
+	 * hides/shows the stats in the seasonal anime page.
+	 * this method is also valid for manga magazine lists, genre lists, and demographic lists. In general, if "this.seasonalTab" is set
+	 * then this method will run.
+	 *
+	 * This method iterates through EACH VALUE of "this.seasonalTabElements" attribute to hide/show the stats **EACH TIME** it's called.
+	 *
+	 * @param {Array} hideList - Array containing the name of the elements that are going to be HIDDEN.
+	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
+	 * IMPORTANT! these pages only show the "score" and "members" stats, so this method only hide these values.
+	 */
  	setSeasonalAnimeStatsVisibility(hideList = [], showList = []){
 
 		//making an array of all anime ids that were stored in this.seasonalTabElements
@@ -399,16 +432,22 @@ class ScoreHider{
 		}
 
 		//this is a bit ugly, but honestly, who cares?
-		//way better than having 3 nested for loops
+		//way better than having 3 nested "for" loops
 		if(hideList.length > 0)
 			scoreVisibility(seasonalIds, hideList, "hide");
 		if(showList.length > 0)
 			scoreVisibility(seasonalIds, showList, "show");
 
 	}
-	/*
-		Updates the visibility of elements from the STATS BLOCK
-		Receives the statName and the value that's going to be set in the stat's element
+	/**
+	* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	* THIS METHOD IS ABOUT THE "Stat Block" section in the anime/manga page.
+	* The stat block is the element of the Anime/Manga page that highlights the score of the anime/manga at the top of the page.
+	* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	*
+	* Changes the value of the stat informed in statName with the in the STATS BLOCK section of the Anime/Manga page.
+	* @param {string} statName - the name of the stat that will have it's value changed
+	* @param {string} newValue - the value that we'll put in the "statName" position of the stat block
 	*/
 	updateStatsBlockScore(statName, newValue){
 		let statElement = this.scoreDetails[statName].element.statsBlock;
@@ -419,10 +458,17 @@ class ScoreHider{
 			statElement.replaceChildren(newValue);
 	}
 
-	/*
-	    Updates the visibility of elements from the LEFT SIDE BAR
-		Receives the statName and the value that's going to be set in the stat's element
-	*/
+	/**
+	 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 * THIS METHOD IS ABOUT THE "left side" section in the anime/manga page.
+	 * The "left side" is the section of the anime/manga page on the left that says "statistics" and contains the stats of the
+	 * current anime/manga
+	 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 *
+	 * Changes the value of the stat informed in statName with the in the LEFT SIDE section of the Anime/Manga page.
+	 * @param {string} statName - the name of the stat that will have it's value changed
+	 * @param {string} newValue - the value that we'll put in the "statName" position of the left side
+	 */
 	updateLeftSideScore(statName, newValue){
 		let statElement = this.scoreDetails[statName].element.leftSide;
 		switch(statName){
@@ -448,11 +494,23 @@ class ScoreHider{
 
 	}
 
-	/*
-	 * Updates the visibility of elements from the REVIEW STATS BAR
-	   Receives the statName and the value that's going to be set in the stat's element*
+	/**
+	 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 * THIS METHOD IS ABOUT THE "review stats" section in the anime/manga page.
+	 * The "review stats" is the section of the anime/manga page that has information concerning the user reviews of the anime/manga
+	 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 *
+	 * Changes the value of the stat informed in statName with the in the REVIEW section of the Anime/Manga page.
+	 * IMPORTANT! It DOES NOT remove the reviews themselves. It just hides/shows the review STATS, such as:
+	 * - Amount of recommended reviews
+	 * - Amount of mixed reviews
+	 * - Amount of not recommended reviews
+	 * - Review ratio bar
+	 * - Amount of reviews
+	 * @param {string} statName - the name of the stat that will have it's value changed
+	 * @param {string} newValue - the value that we'll put in the "statName" position of the left side
 	 */
-	updateReviewStat(statName, newValue){
+	updateReviewScore(statName, newValue){
 		let statElement = this.scoreDetails[statName].element.reviewTab;
 		if(statName == "ratio_bar")
 			statElement.style.visibility = newValue;
@@ -460,7 +518,17 @@ class ScoreHider{
 			statElement.textContent = newValue;
 	}
 
-	//get the element of the stat from the left side bar
+	/**
+	 * Returns the element or text node IN THE LEFT SIDE BAR that has the stat that was informed in "elementName"
+	 * The reason why it's done separately, and so extensively, is because the Myanimelist devs built the "statistics" tab in a way that it's
+	 * impossible to access the values directly with a class or id selection, as almost NO elements in that section has any unique identifiable
+	 * class or id. Forcing us to do take a bunch of random steps to get the values we want.
+	 *
+	 * this is "gambiarra" in its purest form. The man may leave gambiarra, but gambiarra never leaves the man
+	 *
+	 * @param {string} elementName - the name of the element to get from the left side
+	 * @returns {<Object>} - Either a DOM element, or (and for most elements) a text node
+	 */
 	getSidebarElement(elementName) {
 		//if we're not in anime/manga page, the left side bar doesn't exist therefore we need to make this function return undefined
 		//to prevent errors
@@ -521,7 +589,7 @@ class ScoreHider{
 					}									  
 				});						
 				
-				/**
+				/*
 				 * If we didn't manage to get a value for the USERS stat in the last code, it's because
 				 * the stat we want is inside a <small> element
 				 * 
@@ -547,67 +615,69 @@ class ScoreHider{
 		
 	}
 
-
-	//Starts the listener of the scoreHider, this is intended for when the user interacts with the settings.
+	/**
+	 * Defines the event listeners of the class that will make the MAL page react to user input in the popup and other situations.
+	 */
 	startListeners(){
-		//TODO URGENT!! REMOVE THIS LISTENER IN THE FINAL RELEASE
-		//this listener is for debugging purposes ONLY. It HAS to be removed in the final release, otherwise issues could arise
-		// document.addEventListener("keydown", (e)=>{
-		// 	switch(e.key){
-		// 		case "h":
-		// 			this.setAnimePageStatsVisibility(Object.keys(this.scoreDetails));
-		// 			break;
-		// 		case "s":
-		// 			this.setAnimePageStatsVisibility([]);
-		// 			break;
-		// 		case "b":
-		// 			this.setAnimePageStatsVisibility(["score", "favorites"]);
-		// 			break;
-		// 	}
-		// });
 
 		//STORAGE UPDATE LISTENER
 		//this listener will be triggered as soon as a value in the popup is checked/unchecked
-		browser.storage.sync.onChanged.addListener((changes)=>{
-			if(changes.scorehider_settings){
-				let oldValue = changes.scorehider_settings.oldValue;
-				let newValue = changes.scorehider_settings.newValue;
+		//TODO: When I implement the "default placeholder" change, it might be more interesting to make this a private function, that
+		//calls for "onSettingsChange" or the, say, "placeholderChange", depending on the value changed, and then updates the settings.
+		//keep this in mind when you finally implement this system
+		browser.storage.sync.onChanged.addListener((changes) => this.onSettingsChange(changes));
+	}
 
-				console.log("change old value");
-				console.log(oldValue);
-				console.log("change new value");
-				console.log(newValue);
+	/**
+	 * This methods is called in {@link startListeners()} storage listener whenever a value gets changed in storage.
+	 * It is responsible for recalling the hide/show methods when scorehider_settings has new parameters (This action made in the extension's
+	 * popup)
+	 *
+	 * @param {Object} changes - the parameter from storage.sync.onChanged, that is the value that was changed and its changes
+	 * it must follow this pattern:
+	 * {"scorehider_settings": {"oldValue": [...], "newValue": [...]}}
+	 *
+	 *
+	 */
+	onSettingsChange(changes){
+		if(changes.scorehider_settings){
+			let oldValue = changes.scorehider_settings.oldValue;
+			let newValue = changes.scorehider_settings.newValue;
 
-				//The code below makes sure we'll only act upon the elements that were added/removed
-				//otherwise this.setAnimePageStatsVisibility would trigger a "show" command for every single element that wasn't hidden, or
-				//trigger a "hide" for every single element that wasn't shown.
+			console.log("change old value");
+			console.log(oldValue);
+			console.log("change new value");
+			console.log(newValue);
 
-				//Getting all values from the newList that AREN'T in the old list
-				let hideList = newValue.filter((value)=>!oldValue.includes(value));
+			//The code below makes sure we'll only act upon the elements that were added/removed
+			//otherwise this.setAnimePageStatsVisibility would trigger a "show" command for every single element that wasn't hidden, or
+			//trigger a "hide" for every single element that wasn't shown.
 
-				//Getting all values from the oldList that AREN'T in the new list
-				let showList = oldValue.filter((value)=>!newValue.includes(value));
+			//Getting all values from the newList that AREN'T in the old list
+			let hideList = newValue.filter((value)=>!oldValue.includes(value));
 
-				if(this.seasonalTab){
-					//this makes sure the arguments are either "score" or "members", or both
-					hideList = hideList.filter((value)=>value=="score"||value=="members");
-					showList = showList.filter((value)=>value=="score"||value=="members");
-					this.setSeasonalAnimeStatsVisibility(hideList, showList);
-				}else{
-					this.setAnimePageStatsVisibility(hideList, showList);
-				}
+			//Getting all values from the oldList that AREN'T in the new list
+			let showList = oldValue.filter((value)=>!newValue.includes(value));
 
-				//just logging this as an object so it's more convenient to compare hideList with showList
-				console.log("hidelist + showlist");
-				console.log({
-					"hidelist": hideList,
-					"showlist": showList
-				});
-
-				this.settings = newValue;
-
+			if(this.seasonalTab){
+				//this makes sure the arguments are either "score" or "members", or both
+				hideList = hideList.filter((value)=>value=="score"||value=="members");
+				showList = showList.filter((value)=>value=="score"||value=="members");
+				this.setSeasonalAnimeStatsVisibility(hideList, showList);
+			}else{
+				this.setAnimePageStatsVisibility(hideList, showList);
 			}
-		})
+
+			//just logging this as an object so it's more convenient to compare hideList with showList
+			console.log("hidelist + showlist");
+			console.log({
+				"hidelist": hideList,
+				"showlist": showList
+			});
+
+			this.settings = newValue;
+
+		}
 	}
 }
 

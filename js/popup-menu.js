@@ -1,20 +1,33 @@
+/**
+ * This class contains the logic behind the Popup menu's actions.
+ */
 class PopupMenu{
+
+    /**
+     * Defines the statList attribute and starts the appropriate functions
+     * @constructor
+     */
     constructor(){
         this.statList = []; //attribute that will get the list of elements that are checked
         this.defineInitialChecks();
         this.startListeners();
     }
 
-    //gets the settings in storage, and checks all checkbox of the elements that are stored
+    /**
+     * retrieves the settings in storage by calling {@link defineInitialChecks()}, and checks all checkboxes of the elements that are set to be
+     * hidden.
+     *
+     * If there's an error, it hides all elements of the popup and shows a error message instead.
+     * @async
+     */
     async defineInitialChecks(){
         this.statList = (await this.getSettings());
         console.log("initial statList");
         console.log(this.statList);
 
         if(this.statList && !this.statList.error){
-            for(let statName of this.statList){
+            for(let statName of this.statList)
                 document.getElementById(statName).checked = true;
-            }
         }else if(this.statList.error){
             document.querySelector("main").style.display = "none"; //hiding <main>
             //showing the error tab.
@@ -29,8 +42,13 @@ class PopupMenu{
             console.error(this.statList.error);
         }
     }
-    //TODO this  is repeated. It'd be interesting to have a StorageSync class and such
-    //searches for the scorehider_settings in storage, and returns what it finds
+
+    /**
+     * Searches for the "scorehider_settings" position in storage, and returns the value it finds
+     * @returns {Promise<Array>} - contains the name of every stat that this class is supposed to hide.
+     *
+     * TODO this method is repeated with scorehider.class.js. It would be interesting to have a StorageSync class and such
+     */
     getSettings(){
         //browser.storage.sync.get("scorehider_settings")
         //Promise.reject(new Error("Simulated error2"))
@@ -41,7 +59,9 @@ class PopupMenu{
         );
     }
 
-    //starts the listeners of the popup.
+    /**
+     * sets up the listeners of the popup.
+     */
     startListeners(){
         //CHECKBOX LISTENER:
         //Each time the checkbox referring to a stat is checked/unchecked in the popup, the element will be hidden/shown in the actual page.
@@ -64,6 +84,13 @@ class PopupMenu{
     //Updates the scorehider_settings position in the storage.
     //statName is the value that we'll add/remove on storage
     //
+    /**
+     * Updates the "scorehider_settings" position of storage, removing or adding the checked/unchecked element in the array.
+     * @async
+     * @param {string} statName - the name of the stat that we will add or remove in storage.
+     * @param {"add"|"remove"} action - the action that will be done with "statName".
+     * @returns {<boolean>} - Whether the update was succesful or not.
+     */
     async updateSettings(statName, action){
         console.log(`${action == "add" ? "ADDING" : (action == "remove" ? "REMOVING" : "")} "${statName}" IN this.statList`);
 
