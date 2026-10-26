@@ -24,7 +24,8 @@
         },
         {
             "matches": ["https://myanimelist.net/anime*", "https://myanimelist.net/manga*"],
-            "js": ["js/scorehider.class.js"],
+            //ATTENTION!: storageSync.class.js has to be in the first position
+            "js": ["js/storageSync.class.js", "js/scorehider.class.js"],
             "run_at": "document_end"
         }
     ],

@@ -1,8 +1,13 @@
-/**
+/*
  * 
  * TODO Create an Icon for the project
  * 
 */
+
+/**
+ *
+ * This class has the duty of hiding all the scores that the user wants it to hide, across (most) pages that has score stats defined
+ */
 class ScoreHider{	
 	/**
 	 * Sets up the variables that will be used in the rest of the class, and then calls {@link start()}
@@ -19,7 +24,8 @@ class ScoreHider{
 		this.scorePlaceholder = "?"; //The text that will replace the scores	
 		this.settings = [];
 
-		try{						
+		try{
+			this.storageSync = new StorageSync(); //from js/storageSync.class.js
 			/*
 				array of objects containing relevent information about the DOM elements
 				related to the scores
@@ -204,16 +210,18 @@ class ScoreHider{
 	 * @async
 	 */
 	async start(){				
-		// await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR TESTS *ONLY*.
+		await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR DEBUGGING *ONLY*.
 
-		//retrieves all storage data and then throws an error, THIS IS MEANT FOR TESTS *ONLY*
-		// console.log("Testing storage"); console.log(await this.getAllStorage()); throw new Error("Testing");
+		//retrieves all storage data and then throws an error, THIS IS MEANT FOR DEBUGGING *ONLY*
+		// console.log("Testing storage"); console.log(await this.storageSync.getAllStorage()); throw new Error("Testing");
 		try{
-			this.settings = await this.getSettings(); //retrieving settings
+			this.settings = await this.storageSync.getFromStorage("scorehider_settings"); //retrieving settings
 
 			//If there was an error while retrieving the settings, thrown an error
-			if(this.settings?.error)
-				throw Error(`start(): There was an error while trying to retrieve settings from storage (${this.settings.error})`);
+			if(this.settings?.error){
+				console.error("There was an error while attempting to retrieve the settings");
+				throw this.settings.error;
+			}
 
 			//If there was no error, but we still didn't get the settings, then it means it's the first time the extension
 			//is being run.
@@ -222,9 +230,9 @@ class ScoreHider{
 				let result = await this.setSettingsFirstUse(); //sets the settings for first time
 
 				if(result.success)
-					this.settings = result.dataStored; //if the data was stored, then just assign it to this.settings
+					this.settings = result.dataStored.scorehider_settings; //if the data was stored, then just assign it to this.settings
 				else
-					throw Error(`start(): Error when storing settings for the first time (${result?.error})`);
+					throw result?.error;
 			}
 			console.log("settings");
 			console.log(this.settings);
@@ -256,70 +264,23 @@ class ScoreHider{
 	}
 
 	/**
-	 * Returns all values from storage.
-	 * This method is intended for debugging purposes.
-	 * @returns {Promise<Object>} - Every single object in storage
-	 */
-	getAllStorage(){
-		return browser.storage.sync.get(null).then(data => data);
-	}
-
-	/**
-	 * Searches for the "scorehider_settings" position in storage, and returns the value it finds
-	 * @returns {Promise<Array>} - contains the name of every stat that this class is supposed to hide.
-	 */
-	getSettings(){
-		//browser.storage.sync.get("scorehider_settings")
-		//Promise.reject(new Error("Simulated error2"))
-		return browser.storage.sync.get("scorehider_settings").then(
-			(value)=> value?.scorehider_settings,
-		).catch(
-			(error)=>{return {error}}
-		);
-	}
-
-	/**
-	 * updates the "scorehider_settings" position in storage with the informed parameter
-	 * then it returns an object that tells if the update operation was successful
-	 *
-	 * @async
-	 * @param {Array} scorehider_settings - The value that's going to be stored in the "scorehider_settings" position in storage
-	 * @returns {Promise<{"success": true, "error": undefined} | {"success": false, "error": Error}>}
-	 */
-	async setSettings(scorehider_settings){
-		//browser.storage.sync.set({scorehider_settings})
-		//Promise.reject(new Error("Simulated error2"))
-		let success = false;			
-		let errorMsg = undefined;
-		await browser.storage.sync.set({scorehider_settings}).then(
-			()=>{
-				console.log("stored settings succesfully");
-				success = true;
-			}
-		).catch(
-			(error)=>{
-				errorMsg = error;
-			}
-		);
-		return {"success": success, "error": errorMsg};
-	}
-
-	/**
 	 *  Makes an array of every single stat, and stores this array in the "scorehider_settings" position of storage
-	 *  by calling {@link setSettings()}.
+	 *  by calling {@link StorageSync#setInStorage()}.
 	 *
 	 *	@async
 	 *  @returns {Promise<
 	 * 		{"success": true, "error": undefined, "dataStored": [...]} |
 	 *  	{"success": false, "error": Error}
-	 *  >} - Returns the value of {@link setSettings()}, but attaches "dataStored" to the Object if the storage was successful
+	 *  >} - Returns the value of {@link StorageSync#setInStorage()}, but attaches "dataStored" to the Object if the storage was successful
 	 */
 	async setSettingsFirstUse(){
 
 		//creating list that we're going to store
-		let dataToStore = Object.keys(this.scoreDetails);//by default we hide every single stat
+		let dataToStore = {
+			"scorehider_settings": Object.keys(this.scoreDetails)//by default we hide every single stat
+		};
 
-		let result = await this.setSettings(dataToStore); //storing settings
+		let result = await this.storageSync.setInStorage(dataToStore); //storing settings
 		if(result.success)
 			result.dataStored = dataToStore;
 
