@@ -210,7 +210,7 @@ class ScoreHider{
 	 * @async
 	 */
 	async start(){				
-		await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR DEBUGGING *ONLY*.
+		// await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR DEBUGGING *ONLY*.
 
 		//retrieves all storage data and then throws an error, THIS IS MEANT FOR DEBUGGING *ONLY*
 		// console.log("Testing storage"); console.log(await this.storageSync.getAllStorage()); throw new Error("Testing");
