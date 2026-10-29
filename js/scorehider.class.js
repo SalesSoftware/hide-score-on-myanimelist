@@ -122,13 +122,17 @@ class ScoreHider{
 			};
 
 			//seasonal tab, it also refers to other pages like manga/magazine/282/Shounen_Champion_Monthly for example
-			//some LIST VIEWS also have the class ".js-categories-seasonal", so to get the true SEASONAL view we need to filter by only those that
-			//has the element ".seasonal-anime" inside it.
-			this.seasonalViewContainer = document.querySelector(".js-categories-seasonal:has(.seasonal-anime)");
+			//some LIST VIEWS also have the class ".js-categories-seasonal" with ".seasonal-anime" elements inside it, so to get the true SEASONAL
+			//view we need to filter by the ones that has ".seasonal-anime" but are NOT ".list".
+			//Resulting in ".js-categories-seasonal:has(.seasonal-anime):not(.list)"
+			this.seasonalViewContainer = document.querySelector(".js-categories-seasonal:has(.seasonal-anime):not(.list)");
 
 			//refers to the LIST VIEW of the anime/manga pages. For example: https://myanimelist.net/anime.php?cat=anime&q=anime
-			this.listViewContainer = document.querySelector(".js-block-list.list");
-			this.animeViewElements = {}; //will store the stats and other information of ALL anime entries in the seasonal anime page.
+			//The LIST VIEW of the Producers's page has ".js-categories-seasonal.list" class instead of ".js-block-list.list".
+			//So I added both rules to the querySelector, in a way that it will get either one.
+			//Hopefully we don't have a page that has both classes though... :,)
+			this.listViewContainer = document.querySelector(".js-block-list.list, .js-categories-seasonal.list");
+			this.animeViewElements = {}; //will store the stats and other information of ALL anime entries in the seasonal/list anime page.
 			if(this.seasonalViewContainer || this.listViewContainer){
 				//a seasonal/list anime page has many "blocks" for each anime/manga entry.
 				//therefore we need to iterate through EVERY block and store their stats in a variable, before hiding the elements.
@@ -136,10 +140,22 @@ class ScoreHider{
 
 				//these variables are used in LIST VIEWS
 				let indexScore, indexMembers;
+				//LIST VIEWS of the producer pages follow different rules from the other list views
+				//so we use this boolean variable to know if we're at a producer's page or not.
+				//P.S: the rule takes all tr elements that has the "js-anime-category" string ANYWHERE in the classlist of the element.
+				//This is because this class usually shows up in the produce page as "js-anime-category-licensor", "js-anime-category-studio"
+				//or js-anime-category-producer
+				//"!!" just converts the querySelector result into boolean.
+				let isProducerListView = !!this.listViewContainer?.querySelector("tr[class*=\"js-anime-category\"]");
 
-				if(this.seasonalViewContainer)
-					elements = this.seasonalViewContainer.querySelectorAll(".seasonal-anime");
-				else if(this.listViewContainer){
+				//GETTING THE "elements" VARIABLE, that will contain the HTML element of each individual anime entry on the view
+				if(this.seasonalViewContainer || isProducerListView)
+					//If it is a producerListView, we'll also get the ".seasonal-anime" elements
+					elements = isProducerListView
+								? this.listViewContainer.querySelectorAll(".seasonal-anime")
+								: this.seasonalViewContainer.querySelectorAll(".seasonal-anime");
+
+				else if(this.listViewContainer && !isProducerListView){
 					//Each anime/manga <td> entry has a <div id=sarea{the id of the anime/manga}> inside it.
 					//Therefore, to get all anime/manga entries, we select all <tr> elements that has divs that starts with "sarea".
 					//with this we guarantee to take ONLY the anime entries, and not other irrelevant <tr> elements.
@@ -147,8 +163,8 @@ class ScoreHider{
 
 					//List views organize the anime list in a table with multiple rows, each stat being a <td> column
 					//These <td> columns have no identifiable classes or ids, therefore, in order to get the stat that we want, we'll need
-					//to select all <td> childs of the anime/manga <tr> element, and use the indexScore and indexMembers positions to select the
-					//correct elements.
+					//to select all <td> childs of the anime/manga <tr> element, and use the indexScore and indexMembers positions to select
+					//the correct elements.
 					//This index-gathering proccess is done in the code below:
 
 					//Gets the very first <tr> element of the list view, that is the row that contains the labels of the stats.
@@ -163,12 +179,6 @@ class ScoreHider{
 						else if(value.textContent?.toLowerCase().includes("members"))
 							indexMembers = key;
 					});
-
-					// console.log(`indexScore: ${indexScore}`);
-					// console.log(`indexMembers: ${indexMembers}`);
-					// console.log(trTitle.querySelectorAll("td")[indexScore]);
-					// console.log(trTitle.querySelectorAll("td")[indexMembers]);
-
 				}
 				for(let element of elements){
 					try{
@@ -201,6 +211,38 @@ class ScoreHider{
 
 							seasonalViewValues.members.element = Array.from(element.querySelector(".scormem-item.member").childNodes)
 							.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+						}else if(isProducerListView){
+							/*
+							 * EXPLAINING THE NON-SENSICAL RULES:
+							 *
+							 * animeId:
+						 	 *		In the producer list view, each element has an "add" button that makes you add the current anime entry
+							 *      to your list. This button has a ".ga-click.ga-impression" element inside it
+						 	 *		And this element has an attribute "data-ga-click-param" that has a value of "aid:{the id of the anime}"
+						 	 *
+						 	 *		Therefore, to get the anime id we first get this element, extract the value from the attribute, and
+					 		 *		lastly clear the "aid:" from the string by calling .replace() and there it is!
+							 *
+							 * score.element:
+							 *		Each column of the <tr> element of the anime entry has multiple <td> ".borderClass" elements,
+				 			 *    	And inside each one there's multiple ".spaceit_pad" divs, which includes the one responsible for
+						     *		the "score" and "members" stats.
+							 *
+							 *		The SCORE element is the span of the ".spaceit_pad" that has a ".icon-people-score.star" inside it
+							 * 		that is the little yellow star icon beside the score.
+							 * 		As such the querySelector rule is ".spaceit_pad:has(.icon-people-score-star) span"
+							 *
+							 * members.element:
+							 * 		We take the <td class="borderClass"> element that has the attribute "align" set to "right".
+							 * 		This is because this is the <td> element that has the "score" and "members" stats.
+							 *
+							 * 		Then we get the LAST ".spaceit_pad" element of that <td>, as the "Members" score is the last element of the
+							 * 		<td>. Making the querySelecotr rule ".borderClass[align=right] .spaceit_pad:last-child"
+							 */
+							animeId = element.querySelector(".ga-click.ga-impression").getAttribute("data-ga-click-param").replace("aid:", "");
+							seasonalViewValues.score.element = element.querySelector(".spaceit_pad:has(.icon-people-score-star) span");
+							seasonalViewValues.members.element = element.querySelector(".borderClass[align=right] .spaceit_pad:last-child");
+
 						}else if(this.listViewContainer){
 							//Like said before,
 							//each anime/manga <td> entry in list views has a <div id=sarea{the id of the anime/manga}> inside it.
@@ -251,6 +293,8 @@ class ScoreHider{
 		    this.start();
 		}catch(error){
 			console.error(error);
+		}finally{
+			this.revertPreLoadHide();
 		}
 	}	
 	
@@ -304,25 +348,34 @@ class ScoreHider{
 		}catch(error){
 			console.error(error);
 		}finally{
-			console.log("reverting pre-load hide");
-			//making the elements hidden the preload-hide.css visible again
-			if(this.divStatsBlock)
-				this.divStatsBlock.style.opacity = "1";
-
-			if(this.leftSidebar)
-				this.leftSidebar.style.opacity = "1";
-
-			if(this.infoReviewHeader)
-				this.infoReviewHeader.style.opacity = "1";
-
-			if(this.seasonalViewContainer)
-				this.seasonalViewContainer.style.opacity = "1";
-
-			if (this.listViewContainer)
-				this.listViewContainer.style.opacity = "1";
+			this.revertPreLoadHide();
 		}
 	}
 
+	/**
+	 * The container elements of the score stats are hidden upon loading by the "preload-hide.css" file
+	 * This function makes sure that the elements that were hidden in that file will be revealed again
+	 *
+	 * it is of utmost importance of this function to work appropriately, otherwise it could break the pages that this extension is executed in
+	 */
+	revertPreLoadHide(){
+		console.log("reverting pre-load hide");
+		//making the elements hidden the preload-hide.css visible again
+		if(this.divStatsBlock)
+			this.divStatsBlock.style.opacity = "1";
+
+		if(this.leftSidebar)
+			this.leftSidebar.style.opacity = "1";
+
+		if(this.infoReviewHeader)
+			this.infoReviewHeader.style.opacity = "1";
+
+		if(this.seasonalViewContainer)
+			this.seasonalViewContainer.style.opacity = "1";
+
+		if (this.listViewContainer)
+			this.listViewContainer.style.opacity = "1";
+	}
 	/**
 	 *  Makes an array of every single stat, and stores this array in the "scorehider_settings" position of storage
 	 *  by calling {@link StorageSync#setInStorage()}.
@@ -426,28 +479,47 @@ class ScoreHider{
 		//making an array of all anime ids that were stored in this.animeViewElements
 		let seasonalIds = Object.keys(this.animeViewElements);
 
-		//defining the "function" that we're going to run for hiding the elements
+		//defining the "function" that we're going to run in order to hide/show the stats
 		let scoreVisibility = (ids, statList, action) =>{
 				console.log(`setAnimeViewStatsVisibility(): STARTING TO ${action.toUpperCase()} THE ELEMENTS`);
 				//TODO: This is a pretty heavy iteration. For example: If there's 300 anime entries in the fall 2010 page, then this will run
 				//300 times. Each time we try to hide or show the elements, it'll run 300 times.
 				//I tried my best to make it concise, but I don't know if there could be possible performance issues.
-				//since it works just fine for me, I'll just proceed with the development normally, but this sections must be closely monitored.
+				//since it works just fine for me, I'll just proceed with the development normally, but this section must be closely monitored.
 				for(let id of ids){
-					//in the seasonal anime screen, the only stats are "score" and "members"
-					for(let stat of ["score", "members"]){
-						try{
-							//define if we're going to HIDE or SHOW the stat
-							if(statList.includes(stat) && this.animeViewElements[id][stat].element)
-								this.animeViewElements[id][stat].element.textContent = action == "hide"
-																						? this.scorePlaceholder
-																						: this.animeViewElements[id][stat].value;
-						}catch(error){
-							console.error(`setAnimeViewStatsVisibility(): There was an error while trying to ${action.toUpperCase()} the ${stat.toUpperCase()} of the anime/manga id ${id}`);
-							console.error(error);
-							break;
+					//in the anime view screen, the only stats are "score" and "members"
+					try{
+						let valueScore, valueMembers;
+						//Setting the value of "valueScore" and "valueMembers" depending on the "action" we are operating
+						switch(action){
+							case "hide":
+								valueScore = this.scorePlaceholder;
+								//specifically for the Producers's List view, the "members" stat is set as "{Amount of Members} Members"
+								//So for this case, when hiding this element, instad of just replacing it with "this.scorePlaceholder", we need to
+								//replace it with "this.scorePlaceholder" plus the "Members" string.
+								valueMembers = this.animeViewElements[id].members.value?.includes("Members")
+												? `${this.scorePlaceholder} Members`
+												: this.scorePlaceholder;
+								break;
+							case "show":
+								valueScore = this.animeViewElements[id].score.value;
+								valueMembers = this.animeViewElements[id].members.value;
+								break;
 						}
+
+						//setting the stat element with the value if it is present in the statList
+						if(statList.includes("score") && this.animeViewElements[id].score.element)
+							this.animeViewElements[id].score.element.textContent = valueScore;
+
+						if(statList.includes("members") && this.animeViewElements[id].members.element)
+							this.animeViewElements[id].members.element.textContent = valueMembers;
+
+					}catch(error){
+						console.error(`setAnimeViewStatsVisibility(): There was an error while trying to ${action.toUpperCase()} a stat of the anime/manga id ${id}`);
+						console.error(error);
+						continue;
 					}
+
 				}
 				console.log(`setAnimeViewStatsVisibility(): FINISHED "${action.toUpperCase()}"`);
 		}

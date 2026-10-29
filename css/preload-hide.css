@@ -12,7 +12,8 @@ that the users will absolutely never see the scores unless they want to.
 .stats-block,
 .leftside,
 .mal-navbar,
-.js-categories-seasonal:has(.seasonal-anime),
+.js-categories-seasonal:has(.seasonal-anime):not(.list),
+.js-categories-seasonal.list,
 .js-block-list.list
 {
 	/*
@@ -20,9 +21,10 @@ that the users will absolutely never see the scores unless they want to.
 		Visiblity: hidden makes it impossible to run innerText on the js, which stops the scores from 
 		being stored corretly. opacity: 0; fixes that problem.
 
-		[10/10/2026] - Added leftside and mal-navbar (user reviews) to the pre-load hiding 
-		[27/10/2026] - Added ..js-categories-seasonal:has(.seasonal-anime) (page that lists all anime in a season) to the pre-load hiding
-		[26/10/2026] - Added .js-block-list.list (list view in manga/anime genres) tp the pre-load hiding
+		[10/10/2026] - Added leftside and mal-navbar (user reviews)
+		[29/10/2026] - Added .js-categories-seasonal:has(.seasonal-anime):not(.list) (page that lists all anime in a season)
+		[29/10/2026] - Added .js-categories-seasonal.list
+		[26/10/2026] - Added .js-block-list.list (list view in manga/anime genres)
 	*/
 	opacity: 0; 
 }
