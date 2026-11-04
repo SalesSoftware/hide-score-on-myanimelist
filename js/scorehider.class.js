@@ -16,7 +16,7 @@ class ScoreHider{
 	constructor(){
 		//******************** DEFINING THE GLOBAL VARIABLES******************************************							
 		//IMPORTANT: .stats-block is automatically hidden by css/preoload-hide.css
-		//As such it's CRITICALLY IMPORTANT that this file makes it visible again after hiding the scores	
+		//As such it's CRITICALLY IMPORTANT that this file makes it visible again after hiding the scores
 		this.divStatsBlock = document.querySelector(".stats-block");
 		this.leftSidebar = document.querySelector(".leftside");
 		//Review elements
@@ -124,16 +124,25 @@ class ScoreHider{
 			//seasonal tab, it also refers to other pages like manga/magazine/282/Shounen_Champion_Monthly for example
 			//some LIST VIEWS also have the class ".js-categories-seasonal" with ".seasonal-anime" elements inside it, so to get the true SEASONAL
 			//view we need to filter by the ones that has ".seasonal-anime" but are NOT ".list".
-			//Resulting in ".js-categories-seasonal:has(.seasonal-anime):not(.list)"
-			this.seasonalViewContainer = document.querySelector(".js-categories-seasonal:has(.seasonal-anime):not(.list)");
+
+			//Also, in the ANIME STACK page, the seasonal view element has the EXACT class "seasonal-anime-list". But on MAGAZINE lists it
+			//is a "js-categories-seasonal" with multiple "seasonal-anime-list" inside it.
+			//Therefore, in anime stack pages with need to take the element that ONLY has the seasonal-anime-list element.
+			//And in the other screens, we need to take the js-categories-seasonal that DOES NOT have divs with the exact "seasonal-anime-list"
+			//In them (.seasonal-anime-list.{some other class} is fine though)
+			//Resulting in ".js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])), [class=seasonal-anime-list]" rule.
+			this.seasonalViewContainer = document.querySelector(".js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])), [class=seasonal-anime-list]");
 
 			//refers to the LIST VIEW of the anime/manga pages. For example: https://myanimelist.net/anime.php?cat=anime&q=anime
 			//The LIST VIEW of the Producers's page has ".js-categories-seasonal.list" class instead of ".js-block-list.list".
 			//So I added both rules to the querySelector, in a way that it will get either one.
 			//Hopefully we don't have a page that has both classes though... :,)
-			this.listViewContainer = document.querySelector(".js-block-list.list, .js-categories-seasonal.list");
+			this.listViewContainer = document.querySelector(".js-block-list.list:not(.tile-anime-list), .js-categories-seasonal.list:not(.tile-anime-list)");
+
+			this.tileViewContainer = document.querySelector(".tile-anime-list");
+
 			this.animeViewElements = {}; //will store the stats and other information of ALL anime entries in the seasonal/list anime page.
-			if(this.seasonalViewContainer || this.listViewContainer){
+			if(this.seasonalViewContainer || this.listViewContainer || this.tileViewContainer){
 				//a seasonal/list anime page has many "blocks" for each anime/manga entry.
 				//therefore we need to iterate through EVERY block and store their stats in a variable, before hiding the elements.
 				let elements;
@@ -149,12 +158,11 @@ class ScoreHider{
 				let isProducerListView = !!this.listViewContainer?.querySelector("tr[class*=\"js-anime-category\"]");
 
 				//GETTING THE "elements" VARIABLE, that will contain the HTML element of each individual anime entry on the view
-				if(this.seasonalViewContainer || isProducerListView)
+				if(this.seasonalViewContainer || this.tileViewContainer || isProducerListView)
 					//If it is a producerListView, we'll also get the ".seasonal-anime" elements
 					elements = isProducerListView
 								? this.listViewContainer.querySelectorAll(".seasonal-anime")
-								: this.seasonalViewContainer.querySelectorAll(".seasonal-anime");
-
+								: (this.tileViewContainer || this.seasonalViewContainer).querySelectorAll(".seasonal-anime");
 				else if(this.listViewContainer && !isProducerListView){
 					//Each anime/manga <td> entry has a <div id=sarea{the id of the anime/manga}> inside it.
 					//Therefore, to get all anime/manga entries, we select all <tr> elements that has divs that starts with "sarea".
@@ -199,6 +207,11 @@ class ScoreHider{
 
 						if(this.seasonalViewContainer){
 							animeId = element.querySelector(".genres.js-genre")?.id;
+							//Specifically in the "stacks" screen, the ".genres.js-genre" element doesn't have an id, for WHATEVER reason
+							//but it's still possible to get the id in the ".ga-click.ga-impression" element.
+							if(!animeId)
+								animeId = element.querySelector(".ga-click.ga-impression").getAttribute("data-ga-click-param").replace("aid:", "");
+
 							//the next two expressions get the TEXT NODE where the "score" and "members" stats are stored
 							//we sadly cannot gather the DOM element itself, as these values have a <i> tag inside them, making it impossible
 							//for us to replace the stats value with innerText or textContent without removing the <i> tag
@@ -244,7 +257,6 @@ class ScoreHider{
 							seasonalViewValues.members.element = element.querySelector(".borderClass[align=right] .spaceit_pad:last-child");
 
 						}else if(this.listViewContainer){
-							//Like said before,
 							//each anime/manga <td> entry in list views has a <div id=sarea{the id of the anime/manga}> inside it.
 							//Therefore, to get the id, we select ID of the <div> from the current element that has an id that STARTS with "sarea"
 							//and then we remove "sarea" from the string. That way, we successfully gather the id of the anime
@@ -253,6 +265,21 @@ class ScoreHider{
 							//gets the <td> elements associated	with "score" and "members"
 							seasonalViewValues.score.element = element.querySelectorAll("td")[indexScore];
 							seasonalViewValues.members.element = element.querySelectorAll("td")[indexMembers];
+						}else if(this.tileViewContainer){
+							animeId = element.querySelector(".ga-click").getAttribute("data-ga-click-param").replace("aid:", "");
+
+							//getting the TEXT NODE of the "score" and "members" elements
+							//We need to get the text node because there's icons inside the elements. If we change the html of the element
+							//it will replace the icons. So it's better to alter the text node directly
+
+							//we get the text node by making an array of the element's childNodes, and then filtering the value to get only
+							//the nodes whose textContent has numbers OR exactly "N/A"
+							seasonalViewValues.score.element = Array.from(element.querySelector(".stars").childNodes)
+							.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+
+							//P.S, despite the element class being called "users", it refers to the "members" stat. So don't get confused.
+							seasonalViewValues.members.element = Array.from(element.querySelector(".users").childNodes)
+							.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
 						}
 
 						//console an error if couldn't gather the anime/manga id, and proceed with the loop
@@ -281,6 +308,9 @@ class ScoreHider{
 			console.log("listViewContainer");
 			console.log(this.listViewContainer);
 
+			console.log("tileViewContainer");
+			console.log(this.tileViewContainer);
+
 			console.log("animeViewElements");
 			console.log(this.animeViewElements);
 
@@ -293,7 +323,6 @@ class ScoreHider{
 		    this.start();
 		}catch(error){
 			console.error(error);
-		}finally{
 			this.revertPreLoadHide();
 		}
 	}	
@@ -339,9 +368,9 @@ class ScoreHider{
 			console.log(this.settings);
 
 			//starts the hiding/showing proccess based on the settings
-			if(this.seasonalViewContainer || this.listViewContainer)
+			if(this.seasonalViewContainer || this.listViewContainer || this.tileViewContainer)
 				this.setAnimeViewStatsVisibility(this.settings);
-			else if(this.statsBlock || this.leftSidebar || this.reviewTab)
+			else if(this.divStatsBlock || this.leftSidebar || this.reviewTab)
 				this.setAnimePageStatsVisibility(this.settings);
 
 			this.startListeners(); //Initialize the listeners
@@ -372,6 +401,9 @@ class ScoreHider{
 
 		if(this.seasonalViewContainer)
 			this.seasonalViewContainer.style.opacity = "1";
+
+		if(this.tileViewContainer)
+			this.tileViewContainer.style.opacity = "1";
 
 		if (this.listViewContainer)
 			this.listViewContainer.style.opacity = "1";
@@ -752,7 +784,7 @@ class ScoreHider{
 			//Getting all values from the oldList that AREN'T in the new list
 			let showList = oldValue.filter((value)=>!newValue.includes(value));
 
-			if(this.seasonalViewContainer || this.listViewContainer){
+			if(this.seasonalViewContainer || this.listViewContainer || this.tileViewContainer){
 				//this makes sure the arguments are either "score" or "members", or both
 				hideList = hideList.filter((value)=>value=="score"||value=="members");
 				showList = showList.filter((value)=>value=="score"||value=="members");
@@ -767,7 +799,6 @@ class ScoreHider{
 				"hidelist": hideList,
 				"showlist": showList
 			});
-
 			this.settings = newValue;
 
 		}

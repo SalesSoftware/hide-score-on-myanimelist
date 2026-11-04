@@ -12,9 +12,11 @@ that the users will absolutely never see the scores unless they want to.
 .stats-block,
 .leftside,
 .mal-navbar,
-.js-categories-seasonal:has(.seasonal-anime):not(.list),
+.js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])),
+[class=seasonal-anime-list],
 .js-categories-seasonal.list,
-.js-block-list.list
+.js-block-list.list,
+.tile-anime-list
 {
 	/*
 		[05/10/2026] - Changing from visibility:hidden to opacity:0
@@ -22,9 +24,11 @@ that the users will absolutely never see the scores unless they want to.
 		being stored corretly. opacity: 0; fixes that problem.
 
 		[10/10/2026] - Added leftside and mal-navbar (user reviews)
-		[29/10/2026] - Added .js-categories-seasonal:has(.seasonal-anime):not(.list) (page that lists all anime in a season)
+		[03/11/2026] - Added .js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])) (page that lists all anime in a season)
 		[29/10/2026] - Added .js-categories-seasonal.list
 		[26/10/2026] - Added .js-block-list.list (list view in manga/anime genres)
+		[03/11/2026] - Added .tile-anime-list (tile view in stacks and producer pages)
+		[03/11/2026] - Added [class=seasonal-anime-list] (the SEASONAL view specifically at the stacks page)
 	*/
 	opacity: 0; 
 }
