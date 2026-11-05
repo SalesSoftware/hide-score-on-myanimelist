@@ -20,7 +20,7 @@ class ScoreHider{
 		this.divStatsBlock = document.querySelector(".stats-block");
 		this.leftSidebar = document.querySelector(".leftside");
 		//Review elements
-		this.infoReviewHeader = document.querySelector(".mal-navbar");
+		this.infoReviewHeader = document.querySelector("div[class*=review__header]");
 		this.scorePlaceholder = "?"; //The text that will replace the scores	
 		this.settings = [];
 
@@ -139,9 +139,10 @@ class ScoreHider{
 			this.listViewContainer = document.querySelector(".js-block-list.list:not(.tile-anime-list), .js-categories-seasonal.list:not(.tile-anime-list)");
 
 			this.tileViewContainer = document.querySelector(".tile-anime-list");
+			let isPeoplePage = location.pathname.startsWith("/people/");//Includes "/people/..." pages, but not "page.php".
 
 			this.animeViewElements = {}; //will store the stats and other information of ALL anime entries in the seasonal/list anime page.
-			if(this.seasonalViewContainer || this.listViewContainer || this.tileViewContainer){
+			if(this.seasonalViewContainer || this.listViewContainer || this.tileViewContainer || isPeoplePage){
 				//a seasonal/list anime page has many "blocks" for each anime/manga entry.
 				//therefore we need to iterate through EVERY block and store their stats in a variable, before hiding the elements.
 				let elements;
@@ -155,7 +156,6 @@ class ScoreHider{
 				//or js-anime-category-producer
 				//"!!" just converts the querySelector result into boolean.
 				let isProducerListView = !!this.listViewContainer?.querySelector("tr[class*=\"js-anime-category\"]");
-
 				//GETTING THE "elements" VARIABLE, that will contain the HTML element of each individual anime entry on the view
 				if(this.seasonalViewContainer || this.tileViewContainer || isProducerListView)
 					//If it is a producerListView, we'll also get the ".seasonal-anime" elements
@@ -186,7 +186,10 @@ class ScoreHider{
 						else if(value.textContent?.toLowerCase().includes("members"))
 							indexMembers = key;
 					});
-				}
+				}else if(isPeoplePage)
+					//getting both the "anime staff" and "published manga" entries.
+					elements = document.querySelectorAll(".js-table-people-staff  .js-people-staff, .js-table-people-manga .js-people-manga");
+
 				for(let element of elements){
 					try{
 						//the "skeleton" of each object that will be stored in this.animeViewElements
@@ -223,7 +226,8 @@ class ScoreHider{
 
 							seasonalViewValues.members.element = Array.from(element.querySelector(".scormem-item.member").childNodes)
 							.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
-						}else if(isProducerListView){
+						}else if(isProducerListView || isPeoplePage){
+							//[05/11/2026] - Including "/people/" page in this code, as it also uses the same system as the producer list view
 							/*
 							 * EXPLAINING THE NON-SENSICAL RULES:
 							 *
@@ -366,7 +370,7 @@ class ScoreHider{
 			console.log(this.settings);
 
 			//starts the hiding/showing proccess based on the settings
-			if(this.seasonalViewContainer || this.listViewContainer || this.tileViewContainer)
+			if(Object.keys(this.animeViewElements).length > 0)
 				this.setAnimeViewStatsVisibility(this.settings);
 			else if(this.divStatsBlock || this.leftSidebar || this.reviewTab)
 				this.setAnimePageStatsVisibility(this.settings);
@@ -803,7 +807,7 @@ class ScoreHider{
 			//Getting all values from the oldList that AREN'T in the new list
 			let showList = oldValue.filter((value)=>!newValue.includes(value));
 
-			if(this.seasonalViewContainer || this.listViewContainer || this.tileViewContainer){
+			if(Object.keys(this.animeViewElements).length > 0){
 				//this makes sure the arguments are either "score" or "members", or both
 				hideList = hideList.filter((value)=>value=="score"||value=="members");
 				showList = showList.filter((value)=>value=="score"||value=="members");

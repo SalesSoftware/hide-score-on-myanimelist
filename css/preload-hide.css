@@ -11,7 +11,7 @@ that the users will absolutely never see the scores unless they want to.
  */
 .stats-block,
 .leftside,
-.mal-navbar,
+div[class*=review__header],
 .js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])),
 [class=seasonal-anime-list],
 .js-categories-seasonal.list,
@@ -23,7 +23,8 @@ that the users will absolutely never see the scores unless they want to.
 		Visiblity: hidden makes it impossible to run innerText on the js, which stops the scores from 
 		being stored corretly. opacity: 0; fixes that problem.
 
-		[10/10/2026] - Added leftside and mal-navbar (user reviews)
+		[10/10/2026] - Added leftside
+		[05/11/2026] - Added div[class*=review__header] (review section of anime page)
 		[03/11/2026] - Added .js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])) (page that lists all anime in a season)
 		[29/10/2026] - Added .js-categories-seasonal.list
 		[26/10/2026] - Added .js-block-list.list (list view in manga/anime genres)
