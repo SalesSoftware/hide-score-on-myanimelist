@@ -18,12 +18,12 @@
   },
   "content_scripts": [
         {
-            "matches": ["https://myanimelist.net/anime*", "https://myanimelist.net/manga*", "https://myanimelist.net/stacks*"],
+            "matches": ["https://myanimelist.net/*"],
             "css": ["css/preload-hide.css"],
             "run_at": "document_start"
         },
         {
-            "matches": ["https://myanimelist.net/anime*", "https://myanimelist.net/manga*", "https://myanimelist.net/stacks*"],
+            "matches": ["https://myanimelist.net/*"],
             //ATTENTION!: storageSync.class.js has to be in the first position
             "js": ["js/storageSync.class.js", "js/scorehider.class.js"],
             "run_at": "document_end"

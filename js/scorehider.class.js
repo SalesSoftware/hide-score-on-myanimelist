@@ -120,7 +120,6 @@ class ScoreHider{
 					}
 				},
 			};
-
 			//seasonal tab, it also refers to other pages like manga/magazine/282/Shounen_Champion_Monthly for example
 			//some LIST VIEWS also have the class ".js-categories-seasonal" with ".seasonal-anime" elements inside it, so to get the true SEASONAL
 			//view we need to filter by the ones that has ".seasonal-anime" but are NOT ".list".
@@ -327,7 +326,6 @@ class ScoreHider{
 		}
 	}	
 	
-
 	/**
 	 * Gets the value of this.settings from storage (calls {@link setSettingsFirstUse()} if there's no settings in storage) and then calls the
 	 * appropriate methods to hide/show the stats upon getting in the screen, Like {@link setAnimeViewStatsVisibility()} and
@@ -431,10 +429,6 @@ class ScoreHider{
 
 		return result;
 	}
-
-
-
-
 	/**
 	 * hides/shows the elements in the ANIME/MANGA page.
 	 * Since the anime/manga page contains multiple "blocks" with different stats, this method calls multiple appropriate methods to hide
@@ -582,7 +576,6 @@ class ScoreHider{
 		else
 			statElement.replaceChildren(newValue);
 	}
-
 	/**
 	 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	 * THIS METHOD IS ABOUT THE "left side" section in the anime/manga page.
@@ -751,6 +744,32 @@ class ScoreHider{
 		//calls for "onSettingsChange" or the, say, "placeholderChange", depending on the value changed, and then updates the settings.
 		//keep this in mind when you finally implement this system
 		browser.storage.sync.onChanged.addListener((changes) => this.onSettingsChange(changes));
+
+		//SEARCHBAR OBSERVER
+		//If "score" is in this.settings, this observer hides the "SCORE" stat from the searchbar
+		let searchbarObserver = new MutationObserver((changes)=>{
+			//seeing if the settings contains "score"
+			if(this.settings.includes("score")){
+				//"changes" is always an array of mutations, so we need to iterate through it each time
+				for(let change of changes){
+					//when the user hovers over a search result, the anime element adds an ".extra-info" div, and then adds multiple text
+					//contents to that div sequentially, one of them being the "score" information
+
+					//So this code simply checks if the mutation target is ".extra-info" AND if the text "Score: " was added, if true then
+					//we alter the text node to hide the score.
+					if(change.target?.classList.contains("extra-info") && change.addedNodes[0]?.textContent.toLowerCase().includes("score")){
+						change.addedNodes[0].textContent = `Score: ${this.scorePlaceholder}`; //replacing text to hide the score
+						console.log("OBSERVER: score element found.");
+						console.log(change);
+					}
+				}
+			}
+
+		});
+
+		if(document.getElementById("menu_right"))
+			searchbarObserver.observe(document.getElementById("menu_right"), {"childList": true,"subtree":true});
+
 	}
 
 	/**
