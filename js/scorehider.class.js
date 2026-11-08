@@ -23,7 +23,8 @@ class ScoreHider{
 		this.infoReviewHeader = document.querySelector("div[class*=review__header]");
 		this.scorePlaceholder = "?"; //The text that will replace the scores	
 		this.settings = [];
-
+		//Receives the anime hover popup stats. Check the "popupObserver" variable from startObservers() for more details
+		this.scorePopupElements = {};
 		try{
 			this.storageSync = new StorageSync(); //from js/storageSync.class.js
 
@@ -397,7 +398,8 @@ class ScoreHider{
 			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
 				this.setAnimePageStatsVisibility(this.settings);
 
-			this.startListeners(); //Initialize the listeners
+			this.startListeners();
+		    this.startObservers();
 		}catch(error){
 			console.error(error);
 		}finally{
@@ -516,17 +518,19 @@ class ScoreHider{
 	 *
 	 * This method iterates through EACH VALUE of "this.animeViewElements" attribute to hide/show the stats **EACH TIME** it's called.
 	 *
+	 * IMPORTANT! It will ignora any value from hideList/showList that isn't "score" or "members".
+	 *
 	 * @param {Array} hideList - Array containing the name of the elements that are going to be HIDDEN.
 	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
-	 * IMPORTANT! these pages only show the "score" and "members" stats, so this method only hide these values.
 	 */
  	setAnimeViewStatsVisibility(hideList = [], showList = []){
-
 		//making an array of all anime ids that were stored in this.animeViewElements
 		let seasonalIds = Object.keys(this.animeViewElements);
 
 		//defining the "function" that we're going to run in order to hide/show the stats
 		let scoreVisibility = (ids, statList, action) =>{
+				//making sure we won't include anything other than "score" and "members" in the statList
+				statList = statList.filter((stat)=>["score", "members"].includes(stat));
 				console.log(`setAnimeViewStatsVisibility(): STARTING TO ${action.toUpperCase()} THE ELEMENTS`);
 				//TODO: This is a pretty heavy iteration. For example: If there's 300 anime entries in the fall 2010 page, then this will run
 				//300 times. Each time we try to hide or show the elements, it'll run 300 times.
@@ -578,6 +582,59 @@ class ScoreHider{
 			scoreVisibility(seasonalIds, showList, "show");
 
 	}
+
+	/**
+	 * hides/shows the stats in the hovering popups of various MAL pages.
+	 * It iterates through the elements in "this.scorePopupElements"
+	 *
+	 * IMPORTANT! It will ignore all values from hideList/showList that aren't one of the following:
+	 * 	score, users, rank, popularity, members.
+	 *
+	 * @param {Array} hideList - Array containing the name of the elements that are going to be HIDDEN.
+	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
+	 */
+	setAnimePopupStatsVisiblity(hideList = [], showList = []){
+		//defining the "function" that we're going to run in order to hide/show the stats
+		let scoreVisibility = (statList, action) =>{
+			console.log(`setAnimePopupStatsVisiblity(): STARTING TO ${action.toUpperCase()} THE ELEMENTS`);
+			//making sure we'll ignore stats that aren't in the popup.
+			statList = statList.filter((stat)=>["score", "users", "rank", "popularity", "members"].includes(stat));
+
+			//iterating through each entry of this.scorePopupElements
+			for(let [id, popupStats] of Object.entries(this.scorePopupElements)){
+				//iterating through each stat we want to show/hide
+				for (let stat of statList){
+					try{
+						switch(action){
+							case "hide":
+								if(stat == "users")
+									popupStats[stat].element.textContent = `(scored by ${this.scorePlaceholder} users)`;
+								else
+									popupStats[stat].element.textContent = `\n${this.scorePlaceholder}\n`;
+								break;
+							case "show":
+								popupStats[stat].element.textContent = popupStats[stat].value;
+								break;
+						}
+					}catch(error){
+						console.error(`setAnimePopupStatsVisiblity(): There was an error while trying to ${action.toUpperCase()} the "${stat}" of the anime/manga ${id}`);
+						console.error(error);
+						continue;
+					}
+
+				}
+			}
+			console.log(`setAnimePopupStatsVisiblity(): FINISHED "${action.toUpperCase()}"`);
+		}
+
+		//this is a bit ugly, but honestly, who cares?
+		//way better than having 3 nested "for" loops
+		if(hideList.length > 0)
+			scoreVisibility(hideList, "hide");
+		if(showList.length > 0)
+			scoreVisibility(showList, "show");
+	}
+
 	/**
 	* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	* THIS METHOD IS ABOUT THE "Stat Block" section in the anime/manga page.
@@ -764,8 +821,14 @@ class ScoreHider{
 		//calls for "onSettingsChange" or the, say, "placeholderChange", depending on the value changed, and then updates the settings.
 		//keep this in mind when you finally implement this system
 		browser.storage.sync.onChanged.addListener((changes) => this.onSettingsChange(changes));
+	}
 
-		//SEARCHBAR OBSERVER
+	/**
+	 *
+	 * Starts various Mutation Observers of the project
+	 */
+	startObservers(){
+		//SEARCHBAR OBSERVER==================================================================================================================
 		//If "score" is in this.settings, this observer hides the "SCORE" stat from the searchbar
 		let searchbarObserver = new MutationObserver((changes)=>{
 			//seeing if the settings contains "score"
@@ -787,11 +850,112 @@ class ScoreHider{
 
 		});
 
+		//calling observer() on the searchbar observer
+		//"menu_right" is an element that contains some elements from the top-right side of the page, which also includes the search bar
+		//it isn't possible to use the searchbar *itself*
 		if(document.getElementById("menu_right"))
 			searchbarObserver.observe(document.getElementById("menu_right"), {"childList": true,"subtree":true});
 
-	}
+		//POPUP OBSERVER=======================================================================================================================
+		//When you hover over an anime picture, in some pages, a popup option shows up showing a small part of the synopisis and multiple stats
+		//like "score", "members", "users", etc.
 
+		//But this isn't a case of the popups being invisible in the document, the information is dumped into the popup ONLY AFTER the user hovers
+		//the anime/manga picture, in which case a new "hoverinfo-contaniner" element is created.
+		//Thefore IT IS NOT POSSIBLE to gather every single popup information upon loading the page, as they'll only exist the momment the user
+		//hovers through the anime picture.
+
+		//As such, this solution instead detects whenever a new "hoverinfo-contaniner" is created, and then store the relevant stat information
+		//in this.scorePopupElements.
+		//!IMPORTANT!, when the popup is created, this observer also automatically hides the stat, as long as the individual stat is set to be
+		//hidden in this.settings.
+		let popupObserver = new MutationObserver((changes)=>{
+
+			//Whenever a user hovers the popup for the first time, it triggers 3 Mutations
+			//One does something that I do not care, the other puts the text "Loading..." in the popup, and the last one removes the "Loading..."
+			//text from the popup and dumps all of the score information at once in the popup.
+			//They all have the element "hoverinfo-contanier" (no, it's not a typo, it's genuinely how it is in the HTML) as a target.
+
+			//Since the one that dumps the information also removes the "Loading..." node, we can filter the Mutation we want by selecting only
+			//the one that REMOVES NODES.
+			let mutation = changes.find((change)=>{
+				return change.target.classList.contains("hoverinfo-contaniner") && change.removedNodes.length > 0;
+			});
+
+
+			if(mutation){
+				//the "hoverinfo-container"'s parent element (the class of the parent depends on the page you're at) contains a "rel" attribute
+				//this attribute follows this format: "m{manga id}" or "a{anime id}".
+				//So, to extract the anime's id, we remove anything that's not a number from the attribute's value
+				let animeId = mutation.target.parentElement.getAttribute("rel").replace(/[^0-9]/g, "");
+
+				//the "skeleton" of the value that we'll store in the entries of this.scorePopupElements
+				let animeRatings = {
+					"score": {"element": undefined, "value": undefined},
+					"users": {"element": undefined, "value": undefined},
+					"rank": {"element": undefined, "value": undefined},
+					"popularity": {"element": undefined, "value": undefined},
+					"members": {"element": undefined, "value": undefined}
+				}
+
+				let animeRatingsKeys = Object.keys(animeRatings);
+
+				//bulding an array of each <span> and <small> added node
+				let nodes = Array.from(mutation.addedNodes).filter((node)=>node.nodeName == "SPAN" || node.nodeName == "SMALL");
+				for(let node of nodes){
+					//The only <small> added node refers to the "users" stat
+					if(node.nodeName == "SMALL"){
+
+						//storing the element and value
+						animeRatings.users.element = node;
+						animeRatings.users.value = node.textContent;
+
+						//If the current stat is set to be hidden in the settings, then we hide the value right away
+						if(this.settings.includes("users"))
+							animeRatings.users.element.textContent = `(scored by ${this.scorePlaceholder} users)`;
+					}else{
+						//All added <span> nodes are "labels". Like "Score:", "Rank:", "Members:", etc.
+						//The value corresponding to each <span> node "label" is the <span> next sibling, that is a text node
+						//therefore, to store the stat's  value, we first need to check if the <span> "label" refers to a valid stat in the
+						//animeRatings list.
+
+						let statLabel = node.textContent?.toLowerCase().replace(":", ""); //extracting the name of the "label"
+						//getting the animeRatings key that corresponds to the "label".
+						//If it isn't in the animeRatings keys (Like "type" or "genres" for example) then it doesn't return anything
+						let rating = animeRatingsKeys.find((rating) => statLabel.includes(rating));
+
+						//this will only execute if a valid rating was found
+						if(rating){
+							//storing the element and value
+							animeRatings[rating].element = node.nextSibling;
+							animeRatings[rating].value = node.nextSibling?.textContent;
+
+							//If the current stat is set to be hidden in the settings, then we hide the value right away
+							if(this.settings.includes(rating))
+								animeRatings[rating].element.textContent = `\n${this.scorePlaceholder}\n`;
+						}
+					}
+				}
+				//storing the animeRatings value in the this.scorePopupElements
+				this.scorePopupElements[animeId] = animeRatings;
+				console.log("this.scorePopupElements", this.scorePopupElements);
+			}
+		});
+		//STARTING THE POPUP OBSERVER
+		//#content is a div that is present in every page. It is basically the main div of myanimelist, which contains all content of the page.
+		//if the element has "raInfo" or "sarea" elements, which are related to the popups, then the observer will be run using #content as basis
+
+		//The reason why I made the observer watch #content and not something more specific is because I realized that the "main containers"
+		//of the elements with the anime entries that has popup change depending on the page the user is in. And since I don't want to map every
+		//single page I just decided to just use the #content div instead, as it is in every page afterall.
+
+		//still, some of the popup elements have different classes depending on the page, which's why I'm running "raInfo" and "sarea" filters
+		//(rainfo is from the RECOMMENDATIONS page, sarea is from the LIST view pages)
+		if(document.querySelector("#content:has([id^=raInfo]), #content:has([id^=sarea])"))
+			popupObserver.observe(document.querySelector("#content:has([id^=raInfo]), #content:has([id^=sarea])"),{"childList": true,"subtree":true});
+
+
+	}
 	/**
 	 * This methods is called in {@link startListeners()} storage listener whenever a value gets changed in storage.
 	 * It is responsible for recalling the hide/show methods when scorehider_settings has new parameters (This action made in the extension's
@@ -823,14 +987,15 @@ class ScoreHider{
 			//Getting all values from the oldList that AREN'T in the new list
 			let showList = oldValue.filter((value)=>!newValue.includes(value));
 
-			if(Object.keys(this.animeViewElements).length > 0){
-				//this makes sure the arguments are either "score" or "members", or both
-				hideList = hideList.filter((value)=>value=="score"||value=="members");
-				showList = showList.filter((value)=>value=="score"||value=="members");
+			//calling the appropriate functions
+			if(Object.keys(this.animeViewElements).length > 0)
 				this.setAnimeViewStatsVisibility(hideList, showList);
-			}else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab)){
-				this.setAnimePageStatsVisibility(hideList, showList);
-			}
+			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
+				this.setAnimePageStatsVisibility(hideList, showList); //ANIME PAGE
+
+			if(Object.keys(this.scorePopupElements).length > 0)
+				this.setAnimePopupStatsVisiblity(hideList, showList);
+
 
 			//just logging this as an object so it's more convenient to compare hideList with showList
 			console.log("hidelist + showlist");
@@ -843,6 +1008,8 @@ class ScoreHider{
 		}
 	}
 }
+
+
 
 //instantiating the ScoreHider class, making it execute the commands.
 let score = new ScoreHider();
