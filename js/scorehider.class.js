@@ -949,10 +949,9 @@ class ScoreHider{
 		//of the elements with the anime entries that has popup change depending on the page the user is in. And since I don't want to map every
 		//single page I just decided to just use the #content div instead, as it is in every page afterall.
 
-		//still, some of the popup elements have different classes depending on the page, which's why I'm running "raInfo" and "sarea" filters
-		//(rainfo is from the RECOMMENDATIONS page, sarea is from the LIST view pages)
-		if(document.querySelector("#content:has([id^=raInfo]), #content:has([id^=sarea])"))
-			popupObserver.observe(document.querySelector("#content:has([id^=raInfo]), #content:has([id^=sarea])"),{"childList": true,"subtree":true});
+		//Every popup div has an element of class "hoverinfo", so we'll only get the #content if it contains ".hoverinfo" elements.
+		if(document.querySelector("#content:has(.hoverinfo)"))
+			popupObserver.observe(document.querySelector("#content:has(.hoverinfo)"),{"childList": true,"subtree":true});
 
 
 	}
@@ -964,8 +963,6 @@ class ScoreHider{
 	 * @param {Object} changes - the parameter from storage.sync.onChanged, that is the value that was changed and its changes
 	 * it must follow this pattern:
 	 * {"scorehider_settings": {"oldValue": [...], "newValue": [...]}}
-	 *
-	 *
 	 */
 	onSettingsChange(changes){
 		if(changes.scorehider_settings){
