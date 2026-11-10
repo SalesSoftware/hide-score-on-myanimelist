@@ -9,27 +9,20 @@ After score-hider.js finishes hiding the scores, this element is set to visible 
 that the users will absolutely never see the scores unless they want to. 
 
  */
-.stats-block,
-.leftside,
-div[class*=review__header],
-.js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])),
-[class=seasonal-anime-list],
-.js-categories-seasonal.list,
-.js-block-list.list,
-.tile-anime-list
+.stats-block, /*Where the stats in ANIME/MANGA page stays*/
+.leftside, /*The left side of the ANIME/MANGA page, that has some scores*/
+div[class*=review__header], /*Element from the anime/manga page that has REVIEW NUMERICAL INFORMATION*/
+.js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])), /*The ANIME SEASONAL VIEW*/
+[class=seasonal-anime-list],/*Still the ANIME SEASONAL VIEW (specifically for the anime/manga stack pages)*/
+.js-categories-seasonal.list, /*ANIME LIST VIEW*/
+.js-block-list.list, /*ANIME LIST VIEW (in manga/anime genres))*/
+.tile-anime-list, /*ANIME TILE VIEW (in stacks and producer pages)*/
+.content-left:has(.information [data-l-content-type=anime], .information [data-l-content-type=manga]) /*SEARCH RESULTS PAGE (/search/all)*/
 {
 	/*
 		[05/10/2026] - Changing from visibility:hidden to opacity:0
 		Visiblity: hidden makes it impossible to run innerText on the js, which stops the scores from 
 		being stored corretly. opacity: 0; fixes that problem.
-
-		[10/10/2026] - Added leftside
-		[05/11/2026] - Added div[class*=review__header] (review section of anime page)
-		[03/11/2026] - Added .js-categories-seasonal:has(.seasonal-anime):not(.list, .tile-anime-list, :has([class=seasonal-anime-list])) (page that lists all anime in a season)
-		[29/10/2026] - Added .js-categories-seasonal.list
-		[26/10/2026] - Added .js-block-list.list (list view in manga/anime genres)
-		[03/11/2026] - Added .tile-anime-list (tile view in stacks and producer pages)
-		[03/11/2026] - Added [class=seasonal-anime-list] (the SEASONAL view specifically at the stacks page)
 	*/
 	opacity: 0; 
 }

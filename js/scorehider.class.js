@@ -337,6 +337,46 @@ class ScoreHider{
 				}
 			}
 
+			//getting the stats in the SEARCH RESULTS page (myanimelist.com/search/all)
+			//ATTENTION! This is NOT refering to the searchbarObserver. The changes below are applied once the user searchs for something
+			//in the top-right search bar AND PRESSES ENTER or CLICKS IN "view more results"
+			if(location.pathname == "/search/all"){
+				this.searchResultsContainer = document.querySelector(".content-left");
+				this.searchResultsElements = [];
+				if(this.searchResultsContainer){
+					//The stats we are trying to hide are in a ".information" div. "Scored [score number]" and "[member amount] members"
+					//with this query, we get every .information element concerning manga and anime (as there are other entries in the search
+					//result as well, like "people", "characters" and "company")
+					let infoList = this.searchResultsContainer.querySelectorAll(":scope .information:has([data-l-content-type=anime], [data-l-content-type=manga]) > div:last-child");
+					for(let info of infoList){
+						let searchResultElement = {
+							"score": {"element": undefined, "value": undefined},
+							"members": {"element": undefined, "value": undefined}
+						}
+
+						//getting the "score" elements
+						searchResultElement.score.element = Array.from(info.childNodes).find(
+							//P.S: nodeType 3 refers to text node
+							(node)=> node.textContent.toLowerCase().includes("score") && node.nodeType == 3
+						);
+
+						//getting the "members" element
+						searchResultElement.members.element = Array.from(info.childNodes).find(
+							//P.S: nodeType 3 refers to text node
+							(node)=>node.textContent.toLowerCase().includes("members") && node.nodeType == 3
+						);
+
+						//getting the values of the elements
+						searchResultElement.score.value = searchResultElement.score.element?.textContent;
+						searchResultElement.members.value = searchResultElement.members.element?.textContent;
+
+						this.searchResultsElements.push(searchResultElement);
+					}
+
+				}
+			}
+			console.log("searchResultsElements", this.searchResultsElements);
+
 			console.log("animeViewElements");
 			console.log(this.animeViewElements);
 
@@ -393,10 +433,17 @@ class ScoreHider{
 			console.log(this.settings);
 
 			//starts the hiding/showing proccess based on the settings
+
+			//ANIME/MANGA VIEWS
 			if(Object.keys(this.animeViewElements).length > 0)
 				this.setAnimeViewStatsVisibility(this.settings);
+			//ANIME/MANGA PAGE
 			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
 				this.setAnimePageStatsVisibility(this.settings);
+
+			//SEARCH RESULTS PAGE (/search/all)
+			if(this.searchResultsContainer)
+				this.setSearchResultStatsVisibility(this.settings);
 
 			this.startListeners();
 		    this.startObservers();
@@ -427,6 +474,9 @@ class ScoreHider{
 
 		if(this.animeView?.element)
 			this.animeView.element.style.opacity = "1";
+
+		if(this.searchResultsContainer)
+			this.searchResultsContainer.style.opacity = "1";
 	}
 	/**
 	 *  Makes an array of every single stat, and stores this array in the "scorehider_settings" position of storage
@@ -635,6 +685,50 @@ class ScoreHider{
 			scoreVisibility(showList, "show");
 	}
 
+	/**
+	 * hides/shows the stats in search results page (/search/all)
+	 * It iterates through the elements in "this.searchResultsElements"
+	 *
+	 * IMPORTANT! It will ignore all values from hideList/showList that aren't "score" or "members"
+	 *
+	 * @param {Array} hideList - Array containing the name of the elements that are going to be HIDDEN.
+	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
+	 */
+	setSearchResultStatsVisibility(hideList = [], showList = []){
+		//defining the "function" that we're going to run in order to hide/show the stats
+		let scoreVisibility = (statList, action) =>{
+			//making sure we won't include anything other than "score" and "members" in the statList
+			statList = statList.filter((stat)=>["score", "members"].includes(stat));
+			console.log(`setSearchResultStatsVisibility(): STARTING TO ${action.toUpperCase()} THE ELEMENTS`);
+			if(statList.length > 0){
+				for(let searchResult of this.searchResultsElements){
+					try{
+						//Hiding/Showing score
+						if(statList.includes("score"))
+							searchResult.score.element.textContent = action == "hide" ? `\n Scored ${this.scorePlaceholder}`
+																						: searchResult.score.value;
+						//Hiding/Showing members
+						if(statList.includes("members"))
+							searchResult.members.element.textContent = action == "hide" ? `\n${this.scorePlaceholder} members`
+																						: searchResult.members.value;
+					}catch(error){
+						console.error(`setSearchResultStatsVisibility(): There was an error while trying to ${action.toUpperCase()} a stat`, searchResult);
+						console.error(error);
+						continue;
+					}
+
+				}
+			}
+			console.log(`setSearchResultStatsVisibility(): FINISHED "${action.toUpperCase()}"`);
+		}
+
+		//this is a bit ugly, but honestly, who cares?
+		//way better than having 3 nested "for" loops
+		if(hideList.length > 0)
+			scoreVisibility(hideList, "hide");
+		if(showList.length > 0)
+			scoreVisibility(showList, "show");
+	}
 	/**
 	* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	* THIS METHOD IS ABOUT THE "Stat Block" section in the anime/manga page.
@@ -968,6 +1062,7 @@ class ScoreHider{
 		if(changes.scorehider_settings){
 			let oldValue = changes.scorehider_settings.oldValue;
 			let newValue = changes.scorehider_settings.newValue;
+			this.settings = newValue;
 
 			console.log("change old value");
 			console.log(oldValue);
@@ -984,15 +1079,22 @@ class ScoreHider{
 			//Getting all values from the oldList that AREN'T in the new list
 			let showList = oldValue.filter((value)=>!newValue.includes(value));
 
-			//calling the appropriate functions
+			//calling the appropriate functions to hide the scores
+
+			//ANIME/MANGA VIEWS
 			if(Object.keys(this.animeViewElements).length > 0)
 				this.setAnimeViewStatsVisibility(hideList, showList);
+			//ANIME/MANGA PAGE
 			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
 				this.setAnimePageStatsVisibility(hideList, showList); //ANIME PAGE
 
+			//SCORE HOVERING POPUP ELEMENTS
 			if(Object.keys(this.scorePopupElements).length > 0)
 				this.setAnimePopupStatsVisiblity(hideList, showList);
 
+			//SEARCH RESULTS PAGE (/search/all)
+			if(this.searchResultsContainer)
+				this.setSearchResultStatsVisibility(hideList, showList);
 
 			//just logging this as an object so it's more convenient to compare hideList with showList
 			console.log("hidelist + showlist");
@@ -1000,8 +1102,6 @@ class ScoreHider{
 				"hidelist": hideList,
 				"showlist": showList
 			});
-			this.settings = newValue;
-
 		}
 	}
 }
