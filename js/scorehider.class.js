@@ -1,3 +1,45 @@
+/**
+ * IMPORTANT: THIS IS AN ALTERATION THAT WAS DISCARDED
+ * "top_anime_page_score"
+ *
+ * These changes makes it so it's possible to hide/show the scores in the "top anime" and "top manga" pages, such as
+ * https://myanimelist.net/topanime.php
+ * https://myanimelist.net/topmanga.php
+ * https://myanimelist.net/topmanga.php?type=oneshots
+ * [...]
+ *
+ * As of today (November 09th 2026) these changes are actually working.
+ * But there are two main points as to why I chose to discard it:
+ *
+ *	1) The element .js-top-ranking-score-col, that contains a <span> element with the anime's "SCORE", gets an automatically assigned width
+ * through inline html. The origin of this probably being from a javascript file from myanimelist itself.
+ * But this width appears to be calculated AS the elements are loading, and this makes the scores stay off-center in some occasions.
+ *
+ * To replicate, you can check the "score" box in the popup and head to (or refresh if you're already in the page) the top anime or top manga page
+ * After this, you'll notice that the scores were hidden successfully, but as soon as you uncheck the "score" box the score returns BUT OFF-CENTER.
+ *
+ * Everything points to the fact that .js-top-ranking-score-col is calculated using the width of its children as a basis, and since the score
+ * placeholder is only ONE character, as opposed to the actual score that is 4 (e.g 9.23 (the dot also counts as a char)) the .score-label <span>
+ * gets shorter, which means th width of .js-top-ranking-score-col be also shorter. And when we try to show the score again, the <span> overflows,
+ * causing the score number to stray off-center.
+ *
+ * I tried adding spaces to accompany the score placeholder (\\u00A0\\u00A0\\u00A0\\u00A0) but it still strayed a little bit off-center.
+ *
+ * The only way I found to "fix" this was removing that width definition from .js-top-ranking-score-col. But I'm not a fan of that solution.
+ * The width definition was set up by the myanimelist dev team, so it must serve a purpose that I don't know about. So I'd rather avoid the risk of
+ * breaking the website.
+ *
+ *   2) After pondering for a while, I realized that setting the score visiblity in the TOP ANIME page is a bit counter-intuitive.
+ * If the user has accessed that page, then they clearly WISHES to see the, as the name implies, TOP scores.
+ *
+ * There are many important pages to hide the score, and this is not one of them.
+ *
+ *
+ *
+ * If you, for some reason, decide to implement these changes, merge this branch with MAIN.
+ */
+
+
 /*
  * 
  * TODO Create an Icon for the project
@@ -337,6 +379,39 @@ class ScoreHider{
 				}
 			}
 
+
+			//getting the scores in TOP ANIME/MANGA pages
+			this.topAnimeContainer = document.querySelector(".top-ranking-table");
+			this.topAnimeElements = [];
+			if(this.topAnimeContainer){
+				//This gets all <tr> from the table, which is the anime/manga entries
+				let rankingList = this.topAnimeContainer.querySelectorAll(":scope .ranking-list");
+				for(let rankingElement of rankingList){
+					let topAnimeElement = {
+						"score": {"element": undefined, "value": undefined},
+						"members": {"element": undefined, "value": undefined}
+					}
+
+					//Getting the SCORE element
+					topAnimeElement.score.element = rankingElement.querySelector(":scope .js-top-ranking-score-col .score-label");
+
+					//getting the MEMBERS element.
+					//Important! The MEMBERS element is a little label in the left side of the <tr>
+					topAnimeElement.members.element = Array.from(rankingElement.querySelector(":scope .information").childNodes).find((node)=>{
+						return node?.textContent.includes("members")
+					});
+
+					//getting the values of the elements
+					topAnimeElement.score.value = topAnimeElement.score.element?.textContent;
+					topAnimeElement.members.value = topAnimeElement.members.element?.textContent;
+
+					this.topAnimeElements.push(topAnimeElement);
+				}
+
+			}
+
+			console.log("topAnimeElements", this.topAnimeElements);
+
 			console.log("animeViewElements");
 			console.log(this.animeViewElements);
 
@@ -393,10 +468,16 @@ class ScoreHider{
 			console.log(this.settings);
 
 			//starts the hiding/showing proccess based on the settings
+			//ANIME VIEWS
 			if(Object.keys(this.animeViewElements).length > 0)
 				this.setAnimeViewStatsVisibility(this.settings);
+			//ANIME PAGE
 			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
 				this.setAnimePageStatsVisibility(this.settings);
+
+			//TOP ANIME/TOP MANGA pages
+			if(this.topAnimeElements.length > 0)
+				this.setTopAnimeStatVisibility(this.settings);
 
 			this.startListeners();
 		    this.startObservers();
@@ -427,6 +508,9 @@ class ScoreHider{
 
 		if(this.animeView?.element)
 			this.animeView.element.style.opacity = "1";
+
+		if(this.topAnimeContainer)
+			this.topAnimeContainer.style.opacity = "1";
 	}
 	/**
 	 *  Makes an array of every single stat, and stores this array in the "scorehider_settings" position of storage
@@ -625,6 +709,52 @@ class ScoreHider{
 				}
 			}
 			console.log(`setAnimePopupStatsVisiblity(): FINISHED "${action.toUpperCase()}"`);
+		}
+
+		//this is a bit ugly, but honestly, who cares?
+		//way better than having 3 nested "for" loops
+		if(hideList.length > 0)
+			scoreVisibility(hideList, "hide");
+		if(showList.length > 0)
+			scoreVisibility(showList, "show");
+	}
+
+	/**
+	 * hides/shows the stats in the "TOP ANIME" or "TOP MANGA" pages
+	 * It iterates through the elements in "this.topAnimeElements"
+	 *
+	 * IMPORTANT! It will ignore all values from hideList/showList that aren't "score" or "members"
+	 *
+	 * @param {Array} hideList - Array containing the name of the elements that are going to be HIDDEN.
+	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
+	 *
+	 */
+	setTopAnimeStatVisibility(hideList = [], showList = []){
+		//defining the "function" that we're going to run in order to hide/show the stats
+		let scoreVisibility = (statList, action) =>{
+			//making sure we won't include anything other than "score" and "members" in the statList
+			statList = statList.filter((stat)=>["score", "members"].includes(stat));
+			console.log(`setTopAnimeStatVisibility(): STARTING TO ${action.toUpperCase()} THE ELEMENTS`);
+			if(statList.length > 0){
+				for(let topAnime of this.topAnimeElements){
+					try{
+
+						if(statList.includes("score"))
+							topAnime.score.element.textContent = action == "hide" ? `${this.scorePlaceholder}`
+																					: topAnime.score.value;
+
+						if(statList.includes("members"))
+							topAnime.members.element.textContent = action == "hide" ? `\n${this.scorePlaceholder} members\n`
+																					: topAnime.members.value;
+					}catch(error){
+						console.error(`setTopAnimeStatVisibility(): There was an error while trying to ${action.toUpperCase()} a stat`, topAnime);
+						console.error(error);
+						continue;
+					}
+
+				}
+			}
+			console.log(`setTopAnimeStatVisibility(): FINISHED "${action.toUpperCase()}"`);
 		}
 
 		//this is a bit ugly, but honestly, who cares?
@@ -968,6 +1098,7 @@ class ScoreHider{
 		if(changes.scorehider_settings){
 			let oldValue = changes.scorehider_settings.oldValue;
 			let newValue = changes.scorehider_settings.newValue;
+			this.settings = newValue;
 
 			console.log("change old value");
 			console.log(oldValue);
@@ -985,14 +1116,20 @@ class ScoreHider{
 			let showList = oldValue.filter((value)=>!newValue.includes(value));
 
 			//calling the appropriate functions
+			//ANIME/MANGA VIEWS
 			if(Object.keys(this.animeViewElements).length > 0)
 				this.setAnimeViewStatsVisibility(hideList, showList);
+			//ANIME/MANGA PAGE
 			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
 				this.setAnimePageStatsVisibility(hideList, showList); //ANIME PAGE
 
+			//ANIME/MANGA HOVERING POPUP
 			if(Object.keys(this.scorePopupElements).length > 0)
 				this.setAnimePopupStatsVisiblity(hideList, showList);
 
+			//TOP ANIME/MANGA
+			if(this.topAnimeElements.length > 0)
+				this.setTopAnimeStatVisibility(hideList, showList);
 
 			//just logging this as an object so it's more convenient to compare hideList with showList
 			console.log("hidelist + showlist");
@@ -1000,7 +1137,7 @@ class ScoreHider{
 				"hidelist": hideList,
 				"showlist": showList
 			});
-			this.settings = newValue;
+
 
 		}
 	}

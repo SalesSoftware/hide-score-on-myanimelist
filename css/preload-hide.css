@@ -16,7 +16,8 @@ div[class*=review__header],
 [class=seasonal-anime-list],
 .js-categories-seasonal.list,
 .js-block-list.list,
-.tile-anime-list
+.tile-anime-list,
+.top-ranking-table:has(.js-top-ranking-score-col .score-label)
 {
 	/*
 		[05/10/2026] - Changing from visibility:hidden to opacity:0
