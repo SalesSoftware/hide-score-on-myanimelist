@@ -11,7 +11,8 @@ class PopupMenu{
         this.statList = []; //attribute that will get the list of elements that are checked
         this.storageSync = new StorageSync(); //from js/storageSync.class.js
         this.defineInitialChecks();
-        this.startListeners();
+        this.startCheckboxListeners();
+        this.startScorePlaceholderInputListener();
     }
 
     /**
@@ -56,7 +57,7 @@ class PopupMenu{
     /**
      * sets up the listeners of the popup.
      */
-    startListeners(){
+    startCheckboxListeners(){
         //CHECKBOX LISTENER:
         //Each time the checkbox referring to a stat is checked/unchecked in the popup, the element will be hidden/shown in the actual page.
         for(let element of document.querySelectorAll(".stat-option > input[type=checkbox]")){
@@ -105,6 +106,7 @@ class PopupMenu{
                 break;
         }
 
+        //setting in storage
         let result = await this.storageSync.setInStorage({"scorehider_settings": newStatList});
 
         if(result.success){
@@ -114,6 +116,69 @@ class PopupMenu{
             console.log(this.statList);
         }
         return result;
+    }
+
+    /**
+     * Makes the "score placeholder" input work, by taking the user input and storing it in the "score_placeholder" position of storage
+     */
+    async startScorePlaceholderInputListener(){
+        //getting the score placeholder from storage
+        let currentScorePlaceholder = await this.storageSync.getFromStorage("score_placeholder");
+
+        //if we coudln't recover the score_placeholder from storage - Either by it not existing in storage, or due to some error in storage.sync -
+        //we automatically set the scorePlaceholder as "?"
+        if(currentScorePlaceholder?.error || !currentScorePlaceholder)
+            currentScorePlaceholder = "?";
+
+        if(currentScorePlaceholder?.error)
+            console.error(currentScorePlaceholder.error);
+
+        //getting the input element of the score placeholder and defining the score placeholder value
+        let scorePlaceholderInput = document.getElementById("score-placeholder");
+        scorePlaceholderInput.value = currentScorePlaceholder;
+
+        //Starting the listener of the input
+        //This listener gets the user input of #score-placeholder and submits it to storage
+        scorePlaceholderInput.addEventListener("input", async (e)=>{
+
+            //if the text length is 0, that is, if the user just erased text, this listener does nothing
+            if(e.target.value.length <= 0)
+                return undefined;
+
+
+            //Segmenting the string into multiple GRAPHEMES
+            //Javascript is one of many languages that calculates the length of strings by how manyUTF-16 code units ithas.
+            //This is a problem when we deal with emojis and other special characters that has more than code unit per character.
+            //e.g: "🌸".length returns "2". "test🌸".length returns "6"
+
+            //So, in order to get the value that we want, we should first segment the string by its GRAPHEMES CLUSTERS.
+            //A grapheme cluster is basically the sequence of one or more code units that represents a single character.
+            //So "🌸" has TWO code units, but is only ONE grapheme.
+
+            //Therefore, this code section does the aforementioned segmentation of the user input and converts each grapheme information into
+            //an array entry. The length of this array is the `true` amount of characters of the string.
+            let segmentedInput = Array.from(new Intl.Segmenter().segment(e.target.value));
+
+            //if the user types (or pastes) more than 1 characters then we'll only get the FIRST character.
+            if(segmentedInput.length > 1)
+                e.target.value = segmentedInput[0].segment;
+
+            //if the user typed a character that isn't the same we already set, set the NEW score_placeholder in storage
+            if(e.target.value != currentScorePlaceholder){
+                //setting the score_placeholder in storage
+                let result = await this.storageSync.setInStorage({"score_placeholder": e.target.value});
+                if(!result.success){
+                    //TODO: find a way to print this message on the popup, so the user won't be confused.
+                    console.error("Error while updating the score placeholder:", result.error);
+                    //returning the input to its old value
+                    e.target.value = currentScorePlaceholder;
+                    return undefined;
+                }
+                //updating the old input value
+                currentScorePlaceholder = e.target.value;
+            }
+
+        });
     }
 }
 document.addEventListener("DOMContentLoaded", ()=>{

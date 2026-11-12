@@ -1,10 +1,43 @@
 *{
 	/*margin: 0;*/
 }
+:root{
+	--color-1: #2e51a2; /*blue*/
+	--color-2: #121212; /*black*/
+}
+body{
+	height: 520px;
+	width: 320px;
+	margin: 0;
+	padding: 0;
+	font-family: Arial;
+}
+
+header{
+	background-color: var(--color-1);
+	color: #FFF;
+	text-align: center;
+	font-weight: bolder;
+	font-size: 30px;
+}
 main{
 	display: flex;
 	flex-direction: column;
+	gap: 5px;
+/* 	background: red; */
 }
+.stat-option{
+	display: flex;
+	align-items: center;
+}
+
+.stat-option input[type=checkbox]{
+	accent-color: var(--color-1);
+	height: 20px;
+	width: 20px;
+	margin-right: 10px;
+}
+
 /*The tab where we trascribe the errors*/
 .errorTab{
 	display: none;

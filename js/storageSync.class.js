@@ -8,9 +8,9 @@ class StorageSync{
      * @returns {Promise< * | {error: Error}>} - returns the value of the requested element, or an error if it exists
      */
     getFromStorage(elementName){
-        //return browser.storage.sync.get("scorehider_settings").then(
+        //return browser.storage.sync.get(elementName).then(
         //return Promise.reject(new Error("Simulated error2")).then(
-        return browser.storage.sync.get("scorehider_settings").then(
+        return browser.storage.sync.get(elementName).then(
             (value)=> value[elementName],
         ).catch(
             (error)=>{return {error}}

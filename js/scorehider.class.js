@@ -21,7 +21,7 @@ class ScoreHider{
 		this.leftSidebar = document.querySelector(".leftside");
 		//Review elements
 		this.infoReviewHeader = document.querySelector("div[class*=review__header]");
-		this.scorePlaceholder = "?"; //The text that will replace the scores	
+		this.scorePlaceholder; //The character that will replace the scores
 		this.settings = [];
 		//Receives the anime hover popup stats. Check the "popupObserver" variable from startObservers() for more details
 		this.scorePopupElements = {};
@@ -407,9 +407,19 @@ class ScoreHider{
 	async start(){				
 		// await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR DEBUGGING *ONLY*.
 
-		//retrieves all storage data and then throws an error, THIS IS MEANT FOR DEBUGGING *ONLY*
+		// retrieves all storage data and then throws an error, THIS IS MEANT FOR DEBUGGING *ONLY*
 		// console.log("Testing storage"); console.log(await this.storageSync.getAllStorage()); throw new Error("Testing");
 		try{
+			this.scorePlaceholder = await this.storageSync.getFromStorage("score_placeholder"); //getting the score_placeholder from storage
+
+			//If there is no score_placeholder in storage, OR there was an error in the retrieval, use "?" by default.
+			if(!this.scorePlaceholder || this.scorePlaceholder?.error){
+				if(this.scorePlaceholder?.error)
+					console.error("There was an error while recovering the score_placeholder from storage",
+									this.scorePlaceholder.error,
+									"Using \"?\" by default. Execution will proceed normally");
+				this.scorePlaceholder = "?";
+			}
 			this.settings = await this.storageSync.getFromStorage("scorehider_settings"); //retrieving settings
 
 			//If there was an error while retrieving the settings, thrown an error
@@ -912,9 +922,9 @@ class ScoreHider{
 		//STORAGE UPDATE LISTENER
 		//this listener will be triggered as soon as a value in the popup is checked/unchecked
 		//TODO: When I implement the "default placeholder" change, it might be more interesting to make this a private function, that
-		//calls for "onSettingsChange" or the, say, "placeholderChange", depending on the value changed, and then updates the settings.
+		//calls for "onStorageChange" or the, say, "placeholderChange", depending on the value changed, and then updates the settings.
 		//keep this in mind when you finally implement this system
-		browser.storage.sync.onChanged.addListener((changes) => this.onSettingsChange(changes));
+		browser.storage.sync.onChanged.addListener((changes) => this.onStorageChange(changes));
 	}
 
 	/**
@@ -1058,7 +1068,7 @@ class ScoreHider{
 	 * it must follow this pattern:
 	 * {"scorehider_settings": {"oldValue": [...], "newValue": [...]}}
 	 */
-	onSettingsChange(changes){
+	onStorageChange(changes){
 		if(changes.scorehider_settings){
 			let oldValue = changes.scorehider_settings.oldValue;
 			let newValue = changes.scorehider_settings.newValue;
@@ -1080,21 +1090,8 @@ class ScoreHider{
 			let showList = oldValue.filter((value)=>!newValue.includes(value));
 
 			//calling the appropriate functions to hide the scores
+			this.refreshStatsVisibility(hideList, showList);
 
-			//ANIME/MANGA VIEWS
-			if(Object.keys(this.animeViewElements).length > 0)
-				this.setAnimeViewStatsVisibility(hideList, showList);
-			//ANIME/MANGA PAGE
-			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
-				this.setAnimePageStatsVisibility(hideList, showList); //ANIME PAGE
-
-			//SCORE HOVERING POPUP ELEMENTS
-			if(Object.keys(this.scorePopupElements).length > 0)
-				this.setAnimePopupStatsVisiblity(hideList, showList);
-
-			//SEARCH RESULTS PAGE (/search/all)
-			if(this.searchResultsContainer)
-				this.setSearchResultStatsVisibility(hideList, showList);
 
 			//just logging this as an object so it's more convenient to compare hideList with showList
 			console.log("hidelist + showlist");
@@ -1102,8 +1099,37 @@ class ScoreHider{
 				"hidelist": hideList,
 				"showlist": showList
 			});
+		}else if(changes.score_placeholder){
+			//the score placeholder was changed in storage
+			//so update the this.scorePlaceholder attribute and refresh the statsVisiblity of the page to use the new score placeholder
+			this.scorePlaceholder = changes.score_placeholder.newValue;
+			this.refreshStatsVisibility(this.settings);
 		}
 	}
+
+	/**
+	 * Defines the stat visibility of the pages according to the informed "hideList" and "showList"
+	 * @param {Array} hideList - Array containing the name of the elements that are going to be HIDDEN.
+	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
+	 */
+	refreshStatsVisibility(hideList = [], showList = []){
+		//ANIME/MANGA VIEWS
+		if(Object.keys(this.animeViewElements).length > 0)
+			this.setAnimeViewStatsVisibility(hideList, showList);
+		//ANIME/MANGA PAGE
+		else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
+			this.setAnimePageStatsVisibility(hideList, showList); //ANIME PAGE
+
+		//SCORE HOVERING POPUP ELEMENTS
+		if(Object.keys(this.scorePopupElements).length > 0)
+			this.setAnimePopupStatsVisiblity(hideList, showList);
+
+		//SEARCH RESULTS PAGE (/search/all)
+		if(this.searchResultsContainer)
+			this.setSearchResultStatsVisibility(hideList, showList);
+	}
+
+
 }
 
 
