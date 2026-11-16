@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,65 +9,164 @@
 	<script src="js/popup-menu.js"></script>
 </head>
 <body>
+	<header>
+		<span class="title"> MAL SCORE HIDER </span>
+		<button id="theme-button">
+				<svg  viewBox="0 0 24 24" version="1.1" style="color: rgb(0, 0, 0);" fill="#FFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --> <title>ic_fluent_dark_theme_24_regular</title> <desc>Created with Sketch.</desc> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="ic_fluent_dark_theme_24_regular" fill="#FFF" fill-rule="nonzero"> <path d="M12,22 C17.5228475,22 22,17.5228475 22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12 C2,17.5228475 6.4771525,22 12,22 Z M12,20.5 L12,3.5 C16.6944204,3.5 20.5,7.30557963 20.5,12 C20.5,16.6944204 16.6944204,20.5 12,20.5 Z"> </path> </g> </g> </g></svg>
+			</span>
+		</button>
+	</header>
 	<div class="errorTab">
+		<p class="error">
+			 <!-- Where the error is transcribed -->
+		</p>
 		<p>
-			<b> <!-- Where the error is transcribed --></b>
+			Reopen the popup to try again, or
+			<a href="https://github.com/SalesSoftware/hide-score-on-myanimelist/issues/new">
+				report the problem.
+			</a>
 		</p>
 	</div>
-	<header>
-		MAL SCORE HIDER
-	</header>
+
 	<main> 
 		<div class="score-placeholder-container">
-			Score placeholder:
+			<div class="explanation-text">
+				<h4>Score placeholder</h4>
+				<p>Type your own character to replace the hidden scores.</p>
+			</div>
 			<input id="score-placeholder" type="text"></input>
-
 		</div>
+
+		<!-- "Hide All" and "Show All" -->
+		<div class="container-apply-all">
+			<button id="hide-all"> Hide all </button>
+			<button id="show-all"> Show all </button>
+		</div>
+
+		<div class="heading">
+			<span> RATINGS </span>
+		</div>
+
 		<!-- All options -->
 		<div class="stat-option">
-			<input type="checkbox" id="score" name="score">
-			<label for="score"> Score </label>
+			<span class="stat-title"> Score </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="score" name="score">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
+
 		<div class="stat-option">
-			<input type="checkbox" id="users" name="users">
-			<label for="users"> Users </label>
+			<span class="stat-title"> Users </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="users" name="users">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="rank" name="rank">
-			<label for="rank"> Rank </label>
+			<span class="stat-title"> Rank </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="rank" name="rank">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="popularity" name="popularity">
-			<label for="popularity"> Popularity </label>
+			<span class="stat-title"> Popularity </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="popularity" name="popularity">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="members" name="members">
-			<label for="members"> Members </label>
+			<span class="stat-title"> Members </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="members" name="members">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="favorites" name="favorites">
-			<label for="favorites"> Favorites </label>
+			<span class="stat-title"> Favorites </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="favorites" name="favorites">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
+		<div class="heading">
+			<span>REVIEW STATS</span>
+			<small>(Hides the numbers and bar only, not the reviews themselves.)</small>
+		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="ratio_bar" name="ratio_bar">
-			<label for="ratio_bar"> Review Ratio Bar </label>
+			<span class="stat-title"> Recommended</span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="recommended" name="recommended">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="recommended" name="recommended">
-			<label for="recommended"> Recommended </label>
+			<span class="stat-title"> Mixed </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="mixed" name="mixed">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="mixed" name="mixed">
-			<label for="mixed"> Mixed Feelings </label>
+			<span class="stat-title"> Not Recommended</span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="not_recommended" name="not_recommended">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="not_recommended" name="not_recommended">
-			<label for="not_recommended"> Not Recommended </label>
+			<span class="stat-title"> Total Reviews </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="review_amount" name="review_amount">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 		<div class="stat-option">
-			<input type="checkbox" id="review_amount" name="review_amount">
-			<label for="review_amount"> Review Amount </label>
+			<span class="stat-title"> Review Bar </span>
+			<div class="switch-container">
+				<label class="switch">
+					<input type="checkbox" id="ratio_bar" name="ratio_bar">
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
+
 	</main>
+	<footer>
+		<a href="https://github.com/SalesSoftware/hide-score-on-myanimelist/issues/new"> Found a bug? </a>
+	</footer>
 </body>
 </html>

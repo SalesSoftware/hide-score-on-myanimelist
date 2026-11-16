@@ -7,7 +7,7 @@ class StorageSync{
      * Searches for the "scorehider_settings" position in storage, and returns the value it finds
      * @returns {Promise< * | {error: Error}>} - returns the value of the requested element, or an error if it exists
      */
-    getFromStorage(elementName){
+    async getFromStorage(elementName){
         //return browser.storage.sync.get(elementName).then(
         //return Promise.reject(new Error("Simulated error2")).then(
         return browser.storage.sync.get(elementName).then(
@@ -33,7 +33,7 @@ class StorageSync{
         //await Promise.reject(new Error("Simulated error2")).then(
         await browser.storage.sync.set(value).then(
             ()=>{
-                console.log("updated storage succesfully");
+                console.log("updated storage succesfully", value);
                 success = true;
             }
         ).catch(
@@ -43,11 +43,50 @@ class StorageSync{
     }
 
     /**
+     *  Makes an array of every single stat, and stores this array in the "scorehider_settings" position of storage
+     *  by calling {@link setInStorage()}.
+     *  This method was moved to here from {@link ScoreHider} so {@link PopupMenu} can also have access to it.
+     *
+     *  @async
+     *  @returns {Promise<
+     * 		{"success": true, "error": undefined, "dataStored": [...]} |
+     *  	{"success": false, "error": Error}
+     *  >}
+     *  - Returns the value of {@link setInStorage()}, but attaches "dataStored" to the Object if the storage was successful
+     */
+    async setSettingsFirstUse(){
+
+        //creating list that we're going to store
+        let dataToStore = {
+            //by default we hide every single stat
+            "scorehider_settings": [
+                "recommended",
+                "mixed",
+                "not_recommended",
+                "review_amount",
+                "ratio_bar",
+                "favorites",
+                "members",
+                "popularity",
+                "rank",
+                "users",
+                "score"
+            ]
+        };
+
+        let result = await this.setInStorage(dataToStore); //storing settings
+        if(result.success)
+            result.dataStored = dataToStore;
+
+        return result;
+    }
+
+    /**
      * Returns all values from storage.
      * This method is intended for debugging purposes.
      * @returns {Promise<Object>} - Every single object in storage
      */
-    getAllStorage(){
+    async getAllStorage(){
         return browser.storage.sync.get(null).then(data => data);
     }
 }

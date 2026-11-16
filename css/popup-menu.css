@@ -1,44 +1,343 @@
 *{
-	/*margin: 0;*/
+	/* Makes the dark-light theme transition smooth	*/
+	transition: color 0.2s linear,
+				background 0.2s linear;
 }
-:root{
-	--color-1: #2e51a2; /*blue*/
-	--color-2: #121212; /*black*/
+
+/* Default (light mode) colors */
+:root:not(.dark){
+	--color-body: #FFF;
+
+	--color-1: #2e51a2;
+	--color-2: #7D879A;
+
+	--color-scoreplaceholder: #f4f6fa;
+	--color-scoreplaceholder-border: #d5dae5;
+
+	--main-font-color: #000;
+	--color-btn-hover: #e8eefa;
 }
+
+/* Dark mode colors */
+:root.dark {
+	--color-body: #121212;
+
+	--color-1: #6f93e6;
+	--color-2: #9aa3b5;
+
+	--color-scoreplaceholder: #1e222b;
+	--color-scoreplaceholder-border: #343a47;
+
+	--main-font-color: #f2f2f2;
+	--color-btn-hover: #1f2a44;
+}
+
 body{
-	height: 520px;
+	min-height: 600px;
 	width: 320px;
 	margin: 0;
 	padding: 0;
-	font-family: Arial;
-}
+	font-family: 'Noto Sans', system-ui, sans-serif;
+	background: var(--color-body);
 
-header{
-	background-color: var(--color-1);
-	color: #FFF;
-	text-align: center;
-	font-weight: bolder;
-	font-size: 30px;
-}
-main{
 	display: flex;
 	flex-direction: column;
-	gap: 5px;
-/* 	background: red; */
 }
-.stat-option{
+
+/* HEADER =============================================================================================================================== */
+header{
+	background-color: #2e51a2;
+	color: #FFF;
+	font-size: 20px;
+	font-weight: bold;
+
+	height: 45px;
+	padding: 0 20px;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 5px;
+
+	display: grid;
+	grid-template-columns: 10% 80% 10%;
+}
+
+/* The extension's title */
+header span.title {
+	grid-column: 2;
+	display: grid;
+	justify-content: center;
+}
+
+/* The dark theme button */
+header #theme-button{
+	grid-column: 3;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	padding: 0;
+	margin: none;
+	background: none;
+	border: none;
+
+	cursor: pointer;
+	color: #FFF;
+	font-weight: bold;
+}
+
+#theme-button svg{
+	height: 30px;
+	width: 30px;
+}
+
+#theme-button p{
+	margin: 0;
+	color: #FFF;
+
+}
+
+#theme-button span{
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
+
+	gap: 3px;
 }
 
-.stat-option input[type=checkbox]{
-	accent-color: var(--color-1);
-	height: 20px;
-	width: 20px;
-	margin-right: 10px;
+a:link,
+a:visited,
+a:hover,
+a:active,
+a:focus-visible{
+	color: var(--color-1);
 }
-
 /*The tab where we trascribe the errors*/
 .errorTab{
 	display: none;
+	color: var(--main-font-color)
 }
+
+.errorTab p{
+	user-select: text;
+	font-weight: bold;
+}
+
+
+main{
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 0 10px;
+}
+
+main p, main h4, main input[type=text], main .stat-title{
+	color: var(--main-font-color);
+}
+
+/* Making all texts in the popup unselectable */
+:not(input[type=text], .errorTab p){
+	user-select: none;
+}
+
+
+/* SCORE PLACEHOLDER =================================================================================================================== */
+.score-placeholder-container{
+	border-radius: 10px;
+	border: 1px solid var(--color-scoreplaceholder-border);
+
+	display: flex;
+
+	justify-content: space-between;
+	align-items: center;
+	padding: 5px 15px;
+
+	background: var(--color-scoreplaceholder);
+}
+
+.score-placeholder-container h4, p{
+	width: 100%;
+	margin: 0;
+}
+
+/* The div that explains how the score placeholder input works */
+.score-placeholder-container .explanation-text{
+	width: 60%;
+}
+
+.score-placeholder-container .explanation-text p{
+	font-size: 12px;
+	color: var(--color-2);
+}
+
+/* The input of the score placeholder itself */
+.score-placeholder-container input#score-placeholder{
+	height: 30px;
+	width: 60px;
+
+	font-size: 20px;
+	font-weight: bold;
+	text-align: center;
+
+	border-radius: 5px;
+	border: 2px solid var(--color-2);
+	background: var(--color-body);
+}
+input#score-placeholder:focus-visible, input#score-placeholder:hover{
+	outline: none;
+	border: 2px solid var(--color-1);
+}
+
+/* APPLY ALL ================================================================================================================================ */
+/* The container of the div that has the buttons "HIDE ALL" and "SHOW ALL" */
+.container-apply-all{
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+}
+
+.container-apply-all button{
+	background: none;
+	height: 40px;
+	width: 60%;
+	border-radius: 10px;
+	border: 2px solid var(--color-1);
+	color: var(--color-1);
+	font-size: 15px;
+	font-weight: bold;
+
+	cursor: pointer;
+
+	transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+}
+
+.container-apply-all button:hover{
+	background: var(--color-btn-hover);
+}
+
+.container-apply-all button:active{
+	background: var(--color-1);
+	color: #FFF;
+	transition: none !important;
+}
+
+/* STAT OPTIONS ================================================================================================================================ */
+/* The actual toggles to hide the scores */
+
+
+/* Heading: The little title of the section of stats  */
+.heading{
+	color: var(--color-2);
+	font-weight: bold;
+	display: flex;
+	flex-direction: column;
+}
+
+.heading span{
+	border-bottom: 1px solid var(--color-2)
+}
+
+.heading small{
+	font-weight: normal;
+}
+
+/* The container of the option to hide */
+.stat-option{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+}
+
+/* The name of the stat */
+.stat-option .stat-title{
+	font-size: 16px;
+}
+
+/* The container of the SWITCH toggle */
+.stat-option .switch-container{
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+/* A little text that stands beside the switch toggle. If the switch is active, it'll have the text "Hidden", else it will have "Shown" */
+.switch-container::before{
+	font-weight: bold;
+	font-size: 14px;
+}
+.stat-option:has(input:checked) .switch-container::before{
+	content: "Hidden";
+	color: var(--color-1);
+}
+.stat-option:not(:has(input:checked)) .switch-container::before{
+	content: "Shown";
+	color: var(--color-2);
+}
+
+/* CSS OF THE SWITCH TOGGLE ITSELF */
+/*
+ * The original source was developed by gharsh11032000. Available in: https://uiverse.io/gharsh11032000/brave-pug-20
+ */
+.switch {
+	font-size: 13px;
+	position: relative;
+	display: inline-block;
+	width: 3.5em;
+	height: 2em;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+/* The slider */
+.slider {
+	position: absolute;
+	cursor: pointer;
+	inset: 0;
+	border-radius: 50px;
+	transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	background: var(--color-2); /*INACTIVE SWITCH TOGGLE*/
+}
+
+/* ACTIVE SWITCH TOGGLE */
+.switch input:checked + .slider {
+	background: var(--color-1);
+}
+
+.switch input:checked + .slider:before {
+	transform: translateX(1.5em);
+}
+
+/*The switch toggle "ball"*/
+.slider:before {
+	position: absolute;
+	content: "";
+	height: 1.4em;
+	width: 1.4em;
+	left: 0.325em;
+	bottom: 0.325em;
+	background-color: #FFF;
+	border-radius: inherit;
+	transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+}
+
+
+/* FOOTER ====================================================================================================================== */
+footer{
+	/* Makes it take all space left in the popup */
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+

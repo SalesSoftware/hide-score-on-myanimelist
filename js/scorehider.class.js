@@ -406,11 +406,11 @@ class ScoreHider{
 	 */
 	async start(){				
 		// await browser.storage.sync.clear(); //Wipes all storage, THIS IS MEANT FOR DEBUGGING *ONLY*.
-
 		// retrieves all storage data and then throws an error, THIS IS MEANT FOR DEBUGGING *ONLY*
 		// console.log("Testing storage"); console.log(await this.storageSync.getAllStorage()); throw new Error("Testing");
 		try{
-			this.scorePlaceholder = await this.storageSync.getFromStorage("score_placeholder"); //getting the score_placeholder from storage
+			//GETTING THE SCORE_PLACEHOLDER FROM STORAGE
+			this.scorePlaceholder = await this.storageSync.getFromStorage("score_placeholder");
 
 			//If there is no score_placeholder in storage, OR there was an error in the retrieval, use "?" by default.
 			if(!this.scorePlaceholder || this.scorePlaceholder?.error){
@@ -420,7 +420,8 @@ class ScoreHider{
 									"Using \"?\" by default. Execution will proceed normally");
 				this.scorePlaceholder = "?";
 			}
-			this.settings = await this.storageSync.getFromStorage("scorehider_settings"); //retrieving settings
+			//GETTING THE SETTINGS FROM STORAGE
+			this.settings = await this.storageSync.getFromStorage("scorehider_settings");
 
 			//If there was an error while retrieving the settings, thrown an error
 			if(this.settings?.error){
@@ -432,7 +433,7 @@ class ScoreHider{
 			//is being run.
 			if(this.settings == undefined || this.settings == null){
 				console.log("Couldn't find settings data.\nStoring settings for the first time.");
-				let result = await this.setSettingsFirstUse(); //sets the settings for first time
+				let result = await this.storageSync.setSettingsFirstUse(); //sets the settings for first time
 
 				if(result.success)
 					this.settings = result.dataStored.scorehider_settings; //if the data was stored, then just assign it to this.settings
@@ -488,29 +489,7 @@ class ScoreHider{
 		if(this.searchResultsContainer)
 			this.searchResultsContainer.style.opacity = "1";
 	}
-	/**
-	 *  Makes an array of every single stat, and stores this array in the "scorehider_settings" position of storage
-	 *  by calling {@link StorageSync#setInStorage()}.
-	 *
-	 *	@async
-	 *  @returns {Promise<
-	 * 		{"success": true, "error": undefined, "dataStored": [...]} |
-	 *  	{"success": false, "error": Error}
-	 *  >} - Returns the value of {@link StorageSync#setInStorage()}, but attaches "dataStored" to the Object if the storage was successful
-	 */
-	async setSettingsFirstUse(){
 
-		//creating list that we're going to store
-		let dataToStore = {
-			"scorehider_settings": Object.keys(this.scoreDetails)//by default we hide every single stat
-		};
-
-		let result = await this.storageSync.setInStorage(dataToStore); //storing settings
-		if(result.success)
-			result.dataStored = dataToStore;
-
-		return result;
-	}
 	/**
 	 * hides/shows the elements in the ANIME/MANGA page.
 	 * Since the anime/manga page contains multiple "blocks" with different stats, this method calls multiple appropriate methods to hide
