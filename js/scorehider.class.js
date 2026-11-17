@@ -153,10 +153,10 @@ class ScoreHider{
 				{"type": "people"}
 			];
 
-			this.animeView = views.filter((view)=>{
+			this.animeView = views.find((view)=>{
 				//returns the element that is not undefined OR, if in the "/people/" page, returns the "people" view
 				return view.element || (view.type == "people" && location.pathname.startsWith("/people/"))
-			})[0];
+			});
 			console.log("this.animeView");
 			console.log(this.animeView);
 			if(this.animeView){
@@ -249,10 +249,10 @@ class ScoreHider{
 
 								//REGEX: gets the text node that has numbers [0-9] OR the exact text "N/A"
 								seasonalViewValues.score.element = Array.from(element.querySelector(".scormem-item.score").childNodes)
-								.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+								.find((node)=>/[0-9]|N\/A/g.test(node.textContent));
 
 								seasonalViewValues.members.element = Array.from(element.querySelector(".scormem-item.member").childNodes)
-								.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+								.find((node)=>/[0-9]|N\/A/g.test(node.textContent));
 								break;
 
 							case "tile":
@@ -264,11 +264,11 @@ class ScoreHider{
 								//we get the text node by making an array of the element's childNodes, and then filtering the value to get only
 								//the nodes whose textContent has numbers OR exactly "N/A"
 								seasonalViewValues.score.element = Array.from(element.querySelector(".stars").childNodes)
-								.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+								.find((node)=>/[0-9]|N\/A/g.test(node.textContent));
 
 								//P.S, despite the element class being called "users", it refers to the "members" stat. So don't get confused.
 								seasonalViewValues.members.element = Array.from(element.querySelector(".users").childNodes)
-								.filter((node)=>/[0-9]|N\/A/g.test(node.textContent))[0];
+								.find((node)=>/[0-9]|N\/A/g.test(node.textContent));
 								break;
 							case "people":
 							case "list":
@@ -835,7 +835,7 @@ class ScoreHider{
 			//so if we are trying to get the users, we can just call the element directly			
 			element = this.leftSidebar.querySelector("[data-id=info1]");			
 		}else{
-			element = leftElements.filter((e)=>{													
+			element = leftElements.find((e)=>{
 				/*
 				Takes each text in .spaceit_pad 's <span> element and does this:
 				1) get the value in lowercase
@@ -847,24 +847,20 @@ class ScoreHider{
 					and if elementName == "ranked" then the var "element" receives that DOM element
 				*/
 				return elementName == e.querySelector("span").textContent.toLowerCase().replace(":", "");
-			});		
-			element = element[0];
+			});
 		}		
 
 		//code below is only run if the element isn't undefined
 		if(element){
 			try{
-				//getting the element that has the stat we need			
-				let value = Array.from(element.childNodes).filter((node)=>{				
-					if(elementName == "users"){					
-						//since the SCORE and USERS stats are in the same div, we need to be more specific
-						//when calling for the "users" stat							
-						return node.nodeType == 3 
-						       && node.textContent.includes("users");
-					}else{
-						return node.nodeType == 3 
-						       && node.textContent.replace("\n", "").trim();	
-					}									  
+				//getting the TEXT NODE that has the stat we need
+				let value = Array.from(element.childNodes).find((node)=>{
+					//since the SCORE and USERS stats are in the same div, we need to be more specific when calling for the "users" stat
+					if(elementName == "users")
+						return node.nodeType == 3 && node.textContent.includes("users");
+					else
+						return node.nodeType == 3 && node.textContent.trim(); //NOTE: trim() also removes "\n"
+						//https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#line_terminators
 				});						
 				
 				/*
@@ -877,12 +873,12 @@ class ScoreHider{
 				 * Therefore, the code below intends to extract the "users" stat from /manga pages
 				*/
 				if(elementName == "users" && value.length == 0){
-					value = Array.from(element.querySelectorAll("small")).filter((e)=>{
+					value = Array.from(element.querySelectorAll("small")).find((e)=>{
 	    				return e.textContent.includes("users")
 					}); 				
 				}						
 							
-				return value[0];	
+				return value;
 			}catch(error){
 				console.error(`ERROR: getSidebarElement() error when trying to retrieve "${elementName}" (${error})`);
 			}
