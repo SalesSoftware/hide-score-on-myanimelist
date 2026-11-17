@@ -28,6 +28,7 @@ class ScoreHider{
 		try{
 			this.storageSync = new StorageSync(); //from js/storageSync.class.js
 
+			//gets the score details of anime/manga pages.
 			//matches for "/manga/{manga id}" and "/anime/{anime id}"
 			if(/anime\/[0-9]|manga\/[0-9]/g.test(location.pathname)){
 				/*
@@ -872,7 +873,7 @@ class ScoreHider{
 				 * 
 				 * Therefore, the code below intends to extract the "users" stat from /manga pages
 				*/
-				if(elementName == "users" && value.length == 0){
+				if(elementName == "users" && !value){
 					value = Array.from(element.querySelectorAll("small")).find((e)=>{
 	    				return e.textContent.includes("users")
 					}); 				
@@ -880,7 +881,7 @@ class ScoreHider{
 							
 				return value;
 			}catch(error){
-				console.error(`ERROR: getSidebarElement() error when trying to retrieve "${elementName}" (${error})`);
+				console.error(`ERROR: getSidebarElement() error when trying to retrieve "${elementName}"`, error);
 			}
 		}
 		//if the element is undefined, return null
