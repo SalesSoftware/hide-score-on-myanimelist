@@ -24,7 +24,7 @@ class ScoreHider{
 		this.scorePlaceholder; //The character that will replace the scores
 		this.settings = [];
 		//Receives the anime hover popup stats. Check the "popupObserver" variable from startObservers() for more details
-		this.scorePopupElements = {};
+		this.scorePopupElements = [];
 		try{
 			this.storageSync = new StorageSync(); //from js/storageSync.class.js
 
@@ -125,7 +125,7 @@ class ScoreHider{
 					},
 				};
 			}
-			this.animeViewElements = {}; //will store the stats and other information of ALL anime entries in the seasonal/list anime page.
+			this.animeViewElements = []; //will store the stats and other information of ALL anime entries in the seasonal/list anime page.
 
 			//getting information on various anime lists in MAL
 			let views = [
@@ -232,16 +232,9 @@ class ScoreHider{
 								"element": undefined
 							}
 						};
-						//with this we get the ID of the anime/manga itself. This will be used as an identifier when storing the stats.
-						let animeId;
 
 						switch(this.animeView.type){
 							case "seasonal":
-								animeId = element.querySelector(".genres.js-genre")?.id;
-								//Specifically in the "stacks" screen, the ".genres.js-genre" element doesn't have an id, for WHATEVER reason
-								//but it's still possible to get the id in the ".ga-click.ga-impression" element.
-								if(!animeId)
-									animeId = element.querySelector(".ga-click.ga-impression").getAttribute("data-ga-click-param").replace("aid:", "");
 								//the next two expressions get the TEXT NODE where the "score" and "members" stats are stored
 								//we sadly cannot gather the DOM element itself, as these values have a <i> tag inside them, making it impossible
 								//for us to replace the stats value with innerText or textContent without removing the <i> tag
@@ -257,7 +250,6 @@ class ScoreHider{
 								break;
 
 							case "tile":
-								animeId = element.querySelector(".ga-click").getAttribute("data-ga-click-param").replace("aid:", "");
 								//getting the TEXT NODE of the "score" and "members" elements
 								//We need to get the text node because there's icons inside the elements. If we change the html of the element
 								//it will replace the icons. So it's better to alter the text node directly
@@ -278,13 +270,6 @@ class ScoreHider{
 									/*
 									 * EXPLAINING THE NONSENSE:
 									 *
-									 * animeId:
-									 *		In the producer list view, each element has an "add" button that makes you add the current anime entry
-									 *      to your list. This button has a ".ga-click.ga-impression" element inside it
-									 *		And this element has an attribute "data-ga-click-param" that has a value of "aid:{the id of the anime}"
-									 *
-									 *		Therefore, to get the anime id we first get this element, extract the value from the attribute, and
-									 *		lastly clear the "aid:" from the string by calling .replace() and there it is!
 									 *
 									 * score.element:
 									 *		Each column of the <tr> element of the anime entry has multiple <td> ".borderClass" elements,
@@ -302,15 +287,9 @@ class ScoreHider{
 									 * 		Then we get the LAST ".spaceit_pad" element of that <td>, as the "Members" score is the last element of
 									 * 	the <td>. Making the querySelecotr rule ".borderClass[align=right] .spaceit_pad:last-child"
 									 */
-									animeId = element.querySelector(".ga-click.ga-impression").getAttribute("data-ga-click-param").replace("aid:", "");
 									seasonalViewValues.score.element = element.querySelector(".spaceit_pad:has(.icon-people-score-star) span");
 									seasonalViewValues.members.element = element.querySelector(".borderClass[align=right] .spaceit_pad:last-child");
 								}else{
-									//each anime/manga <td> entry in list views has a <div id=sarea{the id of the anime/manga}> inside it.
-									//Therefore, to get the id, we select ID of the <div> from the current element that has an id that STARTS with "sarea"
-									//and then we remove "sarea" from the string. That way, we successfully gather the id of the anime
-									animeId = element.querySelector("div[id^=sarea]")?.id.replace("sarea", "");
-
 									//gets the <td> elements associated	with "score" and "members"
 									seasonalViewValues.score.element = element.querySelectorAll("td")[indexScore];
 									seasonalViewValues.members.element = element.querySelectorAll("td")[indexMembers];
@@ -318,19 +297,12 @@ class ScoreHider{
 								break;
 						}
 
-						//console an error if couldn't gather the anime/manga id, and proceed with the loop
-						if(!animeId){
-							console.error("ERROR: Could not find the id of the anime element.\nIgnoring element");
-							console.log(element);
-							continue;
-						}
-
 						//getting the actual value of the scores
 						seasonalViewValues.score.value =  seasonalViewValues.score.element?.textContent.replace("\n", "").trim();
 						seasonalViewValues.members.value = seasonalViewValues.members.element?.textContent.replace("\n", "").trim();
 
-						//storing the object into this.animeViewElements, using the anime id as an identifier
-						this.animeViewElements[animeId] = seasonalViewValues;
+						//storing the object in the this.animeViewElements array
+						this.animeViewElements.push(seasonalViewValues);
 					}catch(error){
 						console.error(error);
 						console.log(element);
@@ -382,7 +354,7 @@ class ScoreHider{
 			console.log(this.animeViewElements);
 
 			console.log("animeViewElements size");
-			console.log(Object.keys(this.animeViewElements).length);
+			console.log(this.animeViewElements.length);
 
 		    console.log("scoreDetails");
 			console.log(this.scoreDetails);
@@ -447,7 +419,7 @@ class ScoreHider{
 			//starts the hiding/showing proccess based on the settings
 
 			//ANIME/MANGA VIEWS
-			if(Object.keys(this.animeViewElements).length > 0)
+			if(this.animeViewElements.length > 0)
 				this.setAnimeViewStatsVisibility(this.settings);
 			//ANIME/MANGA PAGE
 			else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
@@ -564,11 +536,8 @@ class ScoreHider{
 	 * @param {Array} showList - Array containing the name of the elements that are going to be SHOWN.
 	 */
  	setAnimeViewStatsVisibility(hideList = [], showList = []){
-		//making an array of all anime ids that were stored in this.animeViewElements
-		let seasonalIds = Object.keys(this.animeViewElements);
-
 		//defining the "function" that we're going to run in order to hide/show the stats
-		let scoreVisibility = (ids, statList, action) =>{
+		let scoreVisibility = (statList, action) =>{
 				//making sure we won't include anything other than "score" and "members" in the statList
 				statList = statList.filter((stat)=>["score", "members"].includes(stat));
 				console.log(`setAnimeViewStatsVisibility(): STARTING TO ${action.toUpperCase()} THE ELEMENTS`);
@@ -576,7 +545,7 @@ class ScoreHider{
 				//300 times. Each time we try to hide or show the elements, it'll run 300 times.
 				//I tried my best to make it concise, but I don't know if there could be possible performance issues.
 				//since it works just fine for me, I'll just proceed with the development normally, but this section must be closely monitored.
-				for(let id of ids){
+				for(let animeElement of this.animeViewElements){
 					//in the anime view screen, the only stats are "score" and "members"
 					try{
 						let valueScore, valueMembers;
@@ -587,25 +556,25 @@ class ScoreHider{
 								//specifically for the Producers's List view, the "members" stat is set as "{Amount of Members} Members"
 								//So for this case, when hiding this element, instad of just replacing it with "this.scorePlaceholder", we need to
 								//replace it with "this.scorePlaceholder" plus the "Members" string.
-								valueMembers = this.animeViewElements[id].members.value?.includes("Members")
+								valueMembers = animeElement.members.value?.includes("Members")
 												? `${this.scorePlaceholder} Members`
 												: this.scorePlaceholder;
 								break;
 							case "show":
-								valueScore = this.animeViewElements[id].score.value;
-								valueMembers = this.animeViewElements[id].members.value;
+								valueScore = animeElement.score.value;
+								valueMembers = animeElement.members.value;
 								break;
 						}
 
 						//setting the stat element with the value if it is present in the statList
-						if(statList.includes("score") && this.animeViewElements[id].score.element)
-							this.animeViewElements[id].score.element.textContent = valueScore;
+						if(statList.includes("score") && animeElement.score.element)
+							animeElement.score.element.textContent = valueScore;
 
-						if(statList.includes("members") && this.animeViewElements[id].members.element)
-							this.animeViewElements[id].members.element.textContent = valueMembers;
+						if(statList.includes("members") && animeElement.members.element)
+							animeElement.members.element.textContent = valueMembers;
 
 					}catch(error){
-						console.error(`setAnimeViewStatsVisibility(): There was an error while trying to ${action.toUpperCase()} a stat of the anime/manga id ${id}`);
+						console.error(`setAnimeViewStatsVisibility(): There was an error while trying to ${action.toUpperCase()} a stat of the anime/manga ${animeElement}`);
 						console.error(error);
 						continue;
 					}
@@ -617,9 +586,9 @@ class ScoreHider{
 		//this is a bit ugly, but honestly, who cares?
 		//way better than having 3 nested "for" loops
 		if(hideList.length > 0)
-			scoreVisibility(seasonalIds, hideList, "hide");
+			scoreVisibility(hideList, "hide");
 		if(showList.length > 0)
-			scoreVisibility(seasonalIds, showList, "show");
+			scoreVisibility(showList, "show");
 
 	}
 
@@ -641,7 +610,7 @@ class ScoreHider{
 			statList = statList.filter((stat)=>["score", "users", "rank", "popularity", "members"].includes(stat));
 
 			//iterating through each entry of this.scorePopupElements
-			for(let [id, popupStats] of Object.entries(this.scorePopupElements)){
+			for(let popupStats of this.scorePopupElements){
 				//iterating through each stat we want to show/hide
 				for (let stat of statList){
 					try{
@@ -657,7 +626,7 @@ class ScoreHider{
 								break;
 						}
 					}catch(error){
-						console.error(`setAnimePopupStatsVisiblity(): There was an error while trying to ${action.toUpperCase()} the "${stat}" of the anime/manga ${id}`);
+						console.error(`setAnimePopupStatsVisiblity(): There was an error while trying to ${action.toUpperCase()} the "${stat}" of the anime/manga`, popupStats);
 						console.error(error);
 						continue;
 					}
@@ -964,11 +933,6 @@ class ScoreHider{
 
 
 			if(mutation){
-				//the "hoverinfo-container"'s parent element (the class of the parent depends on the page you're at) contains a "rel" attribute
-				//this attribute follows this format: "m{manga id}" or "a{anime id}".
-				//So, to extract the anime's id, we remove anything that's not a number from the attribute's value
-				let animeId = mutation.target.parentElement.getAttribute("rel").replace(/[^0-9]/g, "");
-
 				//the "skeleton" of the value that we'll store in the entries of this.scorePopupElements
 				let animeRatings = {
 					"score": {"element": undefined, "value": undefined},
@@ -977,7 +941,7 @@ class ScoreHider{
 					"popularity": {"element": undefined, "value": undefined},
 					"members": {"element": undefined, "value": undefined}
 				}
-
+				//getting the keys of the variable above as we're going to need them later
 				let animeRatingsKeys = Object.keys(animeRatings);
 
 				//bulding an array of each <span> and <small> added node
@@ -1017,7 +981,7 @@ class ScoreHider{
 					}
 				}
 				//storing the animeRatings value in the this.scorePopupElements
-				this.scorePopupElements[animeId] = animeRatings;
+				this.scorePopupElements.push(animeRatings);
 				console.log("this.scorePopupElements", this.scorePopupElements);
 			}
 		});
@@ -1090,14 +1054,14 @@ class ScoreHider{
 	 */
 	refreshStatsVisibility(hideList = [], showList = []){
 		//ANIME/MANGA VIEWS
-		if(Object.keys(this.animeViewElements).length > 0)
+		if(this.animeViewElements.length > 0)
 			this.setAnimeViewStatsVisibility(hideList, showList);
 		//ANIME/MANGA PAGE
 		else if(this.scoreDetails && (this.divStatsBlock || this.leftSidebar || this.reviewTab))
 			this.setAnimePageStatsVisibility(hideList, showList); //ANIME PAGE
 
 		//SCORE HOVERING POPUP ELEMENTS
-		if(Object.keys(this.scorePopupElements).length > 0)
+		if(this.scorePopupElements.length > 0)
 			this.setAnimePopupStatsVisiblity(hideList, showList);
 
 		//SEARCH RESULTS PAGE (/search/all)
