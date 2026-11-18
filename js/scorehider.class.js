@@ -298,8 +298,8 @@ class ScoreHider{
 						}
 
 						//getting the actual value of the scores
-						seasonalViewValues.score.value =  seasonalViewValues.score.element?.textContent.replace("\n", "").trim();
-						seasonalViewValues.members.value = seasonalViewValues.members.element?.textContent.replace("\n", "").trim();
+						seasonalViewValues.score.value =  seasonalViewValues.score.element?.textContent.trim();
+						seasonalViewValues.members.value = seasonalViewValues.members.element?.textContent.trim();
 
 						//storing the object in the this.animeViewElements array
 						this.animeViewElements.push(seasonalViewValues);
@@ -311,7 +311,7 @@ class ScoreHider{
 			}
 
 			//getting the stats in the SEARCH RESULTS page (myanimelist.com/search/all)
-			//ATTENTION! This is NOT refering to the searchbarObserver. The changes below are applied once the user searchs for something
+			//ATTENTION! This is NOT refering to the hoverSearchBarObserver. The changes below are applied once the user searchs for something
 			//in the top-right search bar AND PRESSES ENTER or CLICKS IN "view more results"
 			if(location.pathname == "/search/all"){
 				this.searchResultsContainer = document.querySelector(".content-left");
@@ -320,7 +320,7 @@ class ScoreHider{
 					//The stats we are trying to hide are in a ".information" div. "Scored [score number]" and "[member amount] members"
 					//with this query, we get every .information element concerning manga and anime (as there are other entries in the search
 					//result as well, like "people", "characters" and "company")
-					let infoList = this.searchResultsContainer.querySelectorAll(":scope .information:has([data-l-content-type=anime], [data-l-content-type=manga]) > div:last-child");
+					let infoList = this.searchResultsContainer.querySelectorAll(".information:has([data-l-content-type=anime], [data-l-content-type=manga]) > div:last-child");
 					for(let info of infoList){
 						let searchResultElement = {
 							"score": {"element": undefined, "value": undefined},
@@ -700,7 +700,7 @@ class ScoreHider{
 	*/
 	updateStatsBlockScore(statName, newValue){
 		let statElement = this.scoreDetails[statName].element.statsBlock;
-		newValue = newValue.replace("\n", "").trim(); //removing spaces and "\n" from the newValue so the statsBlock won't change
+		newValue = newValue.trim(); //removing spaces and "\n" from the newValue so the statsBlock won't change
 		if(statName == "users")
 			statElement.setAttribute("data-user", `${newValue} users`);
 		else
@@ -879,7 +879,7 @@ class ScoreHider{
 	startObservers(){
 		//SEARCHBAR OBSERVER==================================================================================================================
 		//If "score" is in this.settings, this observer hides the "SCORE" stat from the searchbar
-		let searchbarObserver = new MutationObserver((changes)=>{
+		let hoverSearchBarObserver = new MutationObserver((changes)=>{
 			//seeing if the settings contains "score"
 			if(this.settings.includes("score")){
 				//"changes" is always an array of mutations, so we need to iterate through it each time
@@ -899,11 +899,22 @@ class ScoreHider{
 
 		});
 
-		//calling observer() on the searchbar observer
+		//calling observer()
+
 		//"menu_right" is an element that contains some elements from the top-right side of the page, which also includes the search bar
 		//it isn't possible to use the searchbar *itself*
-		if(document.getElementById("menu_right"))
-			searchbarObserver.observe(document.getElementById("menu_right"), {"childList": true,"subtree":true});
+		let menuRight = document.getElementById("menu_right");
+		if(menuRight)
+			hoverSearchBarObserver.observe(menuRight, {"childList": true,"subtree":true});
+
+		//This variable contains the element that has the advanced searchbar
+		//The advanced searchbar works in the same way of the searchbar in the top right of the pages, the only difference is that it is
+		//in the center of the screen in some pages.
+
+		//We are getting the DIRECT PARENT in the selector because observing #advancedsearch itself doesn't work, probably due to the page changing
+		let advancedSearchContainer = document.querySelector(":has(> #advancedsearch)");
+		if(advancedSearchContainer)
+			hoverSearchBarObserver.observe(advancedSearchContainer, {"childList": true,"subtree":true});
 
 		//POPUP OBSERVER=======================================================================================================================
 		//When you hover over an anime picture, in some pages, a popup option shows up showing a small part of the synopisis and multiple stats
