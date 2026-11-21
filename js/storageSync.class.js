@@ -2,7 +2,9 @@
  * This class has the purpose of interacting with the browser.storage.sync system. Retrieving and setting values in storage.
  */
 class StorageSync{
-
+    constructor(){
+        this.debounceTimeout; //is used in the debounce() function.
+    }
     /**
      * Searches for the "scorehider_settings" position in storage, and returns the value it finds
      * @returns {Promise< * | {error: Error}>} - returns the value of the requested element, or an error if it exists
@@ -29,17 +31,44 @@ class StorageSync{
         let success = false;
         let errorMsg = undefined;
 
-        //await browser.storage.sync.set(value).then(
-        //await Promise.reject(new Error("Simulated error2")).then(
-        await browser.storage.sync.set(value).then(
-            ()=>{
-                console.log("updated storage succesfully", value);
-                success = true;
-            }
-        ).catch(
-            (error)=>{errorMsg = error}
-        );
+        await this.debounce(async ()=>{
+            //await browser.storage.sync.set(value).then(
+            //await Promise.reject(new Error("Simulated error2")).then(
+            await browser.storage.sync.set(value).then(
+                ()=>{
+                    console.log("updated storage succesfully", value);
+                    success = true;
+                }
+            ).catch(
+                (error)=>{errorMsg = error}
+            );
+        }, 100);
         return {"success": success, "error": errorMsg};
+    }
+
+    /**
+     * Debounce algorithm: (More info in: https://www.geeksforgeeks.org/javascript/debouncing-in-javascript/)
+     * Prevents the user from spamming requests.
+     * Uses "this.debounceTimeout" to clear the old timeout
+     * @async
+     * @param {Function} func - The callback that will be executed after the timeout executes.
+     * @param {number} delayMs - The amount of time before the debounce gets cleared.
+     * @returns {Promise<*>} - A promise (So it can be called with "await") that then returns whatever it is that was called with debounce.
+     */
+    async debounce(func, delayMs = 50){
+
+        return new Promise((resolve)=>{
+            //ATTENTION considering how we're using a "global" variable "this.debounceTimeout", this technically means that it can be cleared
+            //by another request. For example, if I change the scoreplaceholder, and before it gets cleared I click in the score chebox, the most
+            //recent call would clear the scoreplaceholder timeout, potentially generating issues.
+
+            //Considering how I'm using a default delay of 50 - 100ms, I don't think this error is going to happen for the users. But if I'm wrong
+            //then, well.... woops.
+            clearTimeout(this.debounceTimeout);
+            this.debounceTimeout = setTimeout(()=>{
+                resolve(true);
+            }, delayMs);
+        }).then(() => func());
     }
 
     /**
@@ -48,10 +77,7 @@ class StorageSync{
      *  This method was moved to here from {@link ScoreHider} so {@link PopupMenu} can also have access to it.
      *
      *  @async
-     *  @returns {Promise<
-     * 		{"success": true, "error": undefined, "dataStored": [...]} |
-     *  	{"success": false, "error": Error}
-     *  >}
+     *  @returns {Promise<{"success": true, "error": undefined, "dataStored": [...]} | {"success": false, "error": Error}>}
      *  - Returns the value of {@link setInStorage()}, but attaches "dataStored" to the Object if the storage was successful
      */
     async setSettingsFirstUse(){

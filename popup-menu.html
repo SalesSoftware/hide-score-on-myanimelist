@@ -12,20 +12,45 @@
 	<header>
 		<span class="title"> MAL SCORE HIDER </span>
 		<button id="theme-button">
-				<svg  viewBox="0 0 24 24" version="1.1" style="color: rgb(0, 0, 0);" fill="#FFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --> <title>ic_fluent_dark_theme_24_regular</title> <desc>Created with Sketch.</desc> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="ic_fluent_dark_theme_24_regular" fill="#FFF" fill-rule="nonzero"> <path d="M12,22 C17.5228475,22 22,17.5228475 22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12 C2,17.5228475 6.4771525,22 12,22 Z M12,20.5 L12,3.5 C16.6944204,3.5 20.5,7.30557963 20.5,12 C20.5,16.6944204 16.6944204,20.5 12,20.5 Z"> </path> </g> </g> </g></svg>
+				<svg  viewBox="0 0 24 24" version="1.1" style="color: rgb(0, 0, 0);" fill="#FFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --> <title></title> <desc>Created with Sketch.</desc> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="ic_fluent_dark_theme_24_regular" fill="#FFF" fill-rule="nonzero"> <path d="M12,22 C17.5228475,22 22,17.5228475 22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12 C2,17.5228475 6.4771525,22 12,22 Z M12,20.5 L12,3.5 C16.6944204,3.5 20.5,7.30557963 20.5,12 C20.5,16.6944204 16.6944204,20.5 12,20.5 Z"> </path> </g> </g> </g></svg>
 			</span>
 		</button>
 	</header>
+
+	<!--
+		errorTab: An error div that replaces all content of the popup's page to show an error.
+		This is called when the extension, upon being opened, runs into a critical error that stops it from being used.
+		E.g: If we cannot get the user's settings upon loading DUE TO ERROR , then errorTab will be called, as there's no way to run the popup if
+		there ARE user settings but we couldn't retrive them.
+	-->
 	<div class="errorTab">
 		<p class="error">
 			 <!-- Where the error is transcribed -->
 		</p>
 		<p>
 			Reopen the popup to try again, or
-			<a href="https://github.com/SalesSoftware/hide-score-on-myanimelist/issues/new">
+			<!--
+			By using target="_blank" we make sure that when the user clicks we'll open another page
+			If this attribute isn't there, in Chrome, clicking the link won't do anything
+			-->
+			<a href="https://github.com/SalesSoftware/hide-score-on-myanimelist/issues/new" target="_blank">
 				report the problem.
 			</a>
 		</p>
+	</div>
+
+	<!--
+		errorPopup: An error popup that is shown the user when we run into some sort of problem while using the extension's features.
+		It hovers on the top of the page below the header, and can be closed down by clicking the "X" symbol ("close-popup" element)
+	-->
+	<div class="errorPopup" id="error-popup">
+		<!-- Close popup button -->
+		<button id="close-popup" type="button">
+			<svg viewBox="-3 -2.5 30 30" fill="none" transform="matrix(1, 0, 0, 1, 0, 0)rotate(0)" stroke="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4499999999999997"></g><g id="SVGRepo_iconCarrier"><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --> <path d="M3 21.32L21 3.32001"  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M3 3.32001L21 21.32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+		</button>
+
+		<!-- Where the error is transcribed -->
+		<p> Some error </p>
 	</div>
 
 	<main> 
@@ -166,7 +191,11 @@
 
 	</main>
 	<footer>
-		<a href="https://github.com/SalesSoftware/hide-score-on-myanimelist/issues/new"> Found a bug? </a>
+		<!--
+		By using target="_blank" we make sure that when the user clicks we'll open another page
+		If this attribute isn't there, in Chrome, clicking the link won't do anything
+		-->
+		<a href="https://github.com/SalesSoftware/hide-score-on-myanimelist/issues/new" target="_blank"> Found a bug? </a>
 	</footer>
 </body>
 </html>

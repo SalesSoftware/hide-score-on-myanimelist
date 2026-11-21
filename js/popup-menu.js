@@ -26,8 +26,8 @@ class PopupMenu{
 
         if(this.settings?.error){
             //getFromStorage has returned an error. show it to the user
-            this.showErrorTabMessage(`Couldn't load your settings: \n${this.settings.error}`);
             console.error(this.settings.error);
+            this.showErrorTabMessage(`Couldn't load your settings: \n${this.settings.error}`);
             return undefined; //exit start()
 
         }else if(this.settings == undefined || this.settings == null){
@@ -47,6 +47,7 @@ class PopupMenu{
         }
 
         //if we could retrieve the settings, execute the other functions
+        this.startErrorPopupListener();
         this.populateCheckboxes();
         this.startHideAllShowAllListeners();
         this.startCheckboxListeners();
@@ -110,6 +111,7 @@ class PopupMenu{
                 if(!result.success){
                     //if this.updateSettings returns an error
                     console.error(`ERROR AFTER PRESSING #${btn.id}, COULDN'T SET VALUE IN STORAGE. scorehider_settings`, scorehider_settings,"error", result.error);
+                    this.showErrorPopup(`[#${btn.id}] couldn't set new value in storage:\n${result.error}`);
                     return undefined;
                 }
 
@@ -132,6 +134,45 @@ class PopupMenu{
         //transcribing the error message
         errorTab.querySelector("p.error").innerText = message;
     }
+
+    /**
+     * Starts the listener that CLOSES the error popup when the user clicks the "close-popup" element
+     */
+    startErrorPopupListener(){
+        document.getElementById("close-popup").addEventListener("click", ()=>{
+            let errorPopup = document.getElementById("error-popup");
+
+            //Making the error popup FADE-OUT from the page
+            errorPopup.classList.remove("fade-in");
+            errorPopup.classList.add("fade-out");
+        });
+    }
+
+    /**
+     * Shows an error popup to the user with a message defined in the parameter
+     * @param {string} message - The message that is going to be trascribed in the error Popup. ATTENTION, depending on the message informed,
+     *        the popup will show a different message to the user. Please look for "PREDETERMINED MESSAGES" in the comments for more information.
+     */
+    showErrorPopup(message){
+        //PREDETERMINED MESSAGES.===============================================================================================================
+        //Depending on the type of error, we're going to show a different message to the user, to avoid the popups from becoming too technical.
+
+        //MAX_WRITE_OPERATIONS_PER_MINUTE - In Chrome, if you make too many "set" requests to storage too quickly, (e.g spamming the
+        //score placeholder input) then the MAX_WRITE_OPERATIONS_PER_MINUTE error is triggered.
+        //When this error is triggered, it stops the user from making ANY "set" requests to storage for about 60 seconds.
+        //As such, we need to inform the user that they're making too many requests, and that now they'll have to wait for a minute to be able to
+        //make changes again.
+        if(message.includes("MAX_WRITE_OPERATIONS_PER_MINUTE"))
+            message = "You've made too many requests.\nPlease wait a minute, then try again.";
+        //======================================================================================================================================
+
+        let errorPopup = document.getElementById("error-popup");
+        errorPopup.querySelector("p").textContent = message; //putting the message in the popup
+
+        //Making the popup FADE IN the page.
+        errorPopup.classList.remove("fade-out");
+        errorPopup.classList.add("fade-in");
+    }
     /**
      * Starts the listeners of the checkboxes related to the stats. In a way that, when a stat is checked it is ADDED to the "scorehider_settings"
      * position of storage, and if it is UNCHECKED it is REMOVED from that same list.
@@ -153,16 +194,25 @@ class PopupMenu{
                     //to do that, we simply filter the current "this.settings", removing the stat that was unchecked.
                     newSettings = this.settings.filter((stat)=>stat != e.target.name);
 
+                //reverting the checked attribute so the "toggle" animation will only play when the changes are successfully stored in storage
+                e.target.checked = !e.target.checked;
+
                 //sending the new settings to storage
                 let result = await this.updateSettings(newSettings);
-                if(result.success)
-                    console.log(`${e.target.name} CHANGED - CHECKED = ${e.target.checked}`);
-                else{
-                    //there was an error in the updateSettings execution, so we revert the checkbox selection
-                    //from the user's perspective, it'll look like the click "didn't register". Ofc error logs will be available in the
-                    //popup console.
-                    console.error(result.error);
+                if(result.success){
+                    //changes were successfully stored
+                    //returning to the original checked status so the "toggle" animation can be played
                     e.target.checked = !e.target.checked;
+                    console.log(`${e.target.name} was ${e.target.checked ? "CHECKED" : "UNCHECKED"}`);
+                }else{
+                    //there was an error in the updateSettings execution, so we revert the checkbox selection
+                    //Since we already reverted the checked status earlier, the checkbox will remain with whatever value it had before calling
+                    //this request
+
+                    console.error(`error while trying to set "${e.target.name}"`, result.error);
+                    this.showErrorPopup(`error while trying to set "${e.target.name}":\n${result.error}`);
+                    //The line below supposedly prints the first line of the stack. Not sure if we're gonna need it, but I'm commenting just in case
+                    //this.showErrorPopup(`error while trying to set "${e.target.name}":\n${result.error}\n${result.error?.stack.split("\n")[0]}`);
                 }
             })
         };
@@ -201,11 +251,10 @@ class PopupMenu{
 
         //if we coudln't recover the score_placeholder from storage - Either by it not existing in storage, or due to some error in storage.sync -
         //we automatically set the scorePlaceholder as "?"
-        if(currentScorePlaceholder?.error || !currentScorePlaceholder)
+        if(currentScorePlaceholder?.error || !currentScorePlaceholder){
+            console.error(`couldn't recover the score placeholder from storage, using "?" by default.\nError: `, currentScorePlaceholder?.error);
             currentScorePlaceholder = "?";
-
-        if(currentScorePlaceholder?.error)
-            console.error(currentScorePlaceholder.error);
+        }
 
         //getting the input element of the score placeholder and defining the score placeholder value
         let scorePlaceholderInput = document.getElementById("score-placeholder");
@@ -255,8 +304,8 @@ class PopupMenu{
                 //setting the score_placeholder in storage
                 let result = await this.storageSync.setInStorage({"score_placeholder": e.target.value});
                 if(!result.success){
-                    //TODO: find a way to print this message on the popup, so the user won't be confused.
                     console.error("Error while updating the score placeholder:", result.error);
+                    this.showErrorPopup(`Error while updating the score placeholder:\n${result.error}`);
                     //returning the input to its old value
                     e.target.value = currentScorePlaceholder;
                     return undefined;
@@ -301,6 +350,8 @@ class PopupMenu{
             let result = await this.storageSync.setInStorage({theme});
 
             //if there was an error, we console.error it.
+            //the user shall not see this error on the error-popup.
+
             //Having an error won't stop the theme from being switched, but since it won't set in storage once the user closes the popup
             //it'll still be the old theme.
             if(result.error)

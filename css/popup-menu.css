@@ -31,6 +31,20 @@
 	--main-font-color: #f2f2f2;
 	--color-btn-hover: #1f2a44;
 }
+/* Chrome's default font-size for <p> and <a> are smaller than the other browsers.
+   This makes the font-sizes standartized
+*/
+p, a{
+	font-size: 16px;
+}
+
+a:link,
+a:visited,
+a:hover,
+a:active,
+a:focus-visible{
+	color: var(--color-1);
+}
 
 body{
 	min-height: 600px;
@@ -106,23 +120,107 @@ header #theme-button{
 	gap: 3px;
 }
 
-a:link,
-a:visited,
-a:hover,
-a:active,
-a:focus-visible{
-	color: var(--color-1);
-}
 /*The tab where we trascribe the errors*/
 .errorTab{
 	display: none;
-	color: var(--main-font-color)
+	color: var(--main-font-color);
+	padding: 0 10px; /*Same padding as <main>*/
 }
 
 .errorTab p{
 	user-select: text;
 	font-weight: bold;
 }
+
+/* Error popup */
+.errorPopup{
+	background: #ead9d8;
+
+	border-radius: 10px;
+	border: 2px solid red;
+	padding: 18px;
+
+	/* The error popup will show up at the top of the page, below the header*/
+	position: absolute;
+	top: 30px;
+
+	/*The switch toggles were overlapping with the error popup. This z-index fixes it*/
+	z-index: 100;
+
+	/* Centering the element horizontally*/
+	left: 0;
+	right: 0;
+	margin-inline: auto;
+	width: fit-content;
+
+	/* The element is hidden by default */
+	visibility: hidden;
+
+}
+
+/* The element that will receive the error message itself */
+.errorPopup p{
+	color: #b22b2b;
+	user-select: text; /* So the text can be selectable */
+	white-space: pre-wrap; /*So we can use "\n"*/
+}
+
+/* The button to close the popup */
+.errorPopup #close-popup{
+	/* Stays at the top-right side of the popup */
+	position: absolute;
+	right: 0;
+	top: 0;
+
+	cursor: pointer;
+
+	/* Removing the default button stylying, as we're using a SVG*/
+	padding: 0;
+	background: none;
+	border: none;
+
+	height: 26px;
+	width: 26px;
+}
+
+/* errorPopup close button svg */
+.errorPopup #close-popup svg{
+	stroke: grey;
+	/* So there's no disparity between the <button> and the <svg> */
+	width: 100%;
+	height: 100%;
+
+	/* So the hovering animation can be smooth */
+	transition: stroke 0.2s linear;
+}
+
+/* When we hover in the close button, it should turn to black */
+.errorPopup #close-popup:hover svg{
+	stroke: black;
+}
+
+/* ANIMATIONS TO BE USED IN THE ERROR POPUP */
+.fade-in{
+	animation: fadeIn 0.2s ease forwards;
+}
+.fade-out{
+	animation: fadeOut 0.2s ease forwards;
+}
+
+/* fadeIn: starts with visibility hidden and opacity 0, then turns into visibility visible and opacity 1 */
+@keyframes fadeIn{
+	0% { opacity: 0; visibility: hidden; }
+	1% { opacity: 0; visibility: visible; }
+	100% { opacity: 1; visibility: visible; }
+}
+
+/* fadeIn: starts with visibility visible and opacity 1, then turns into visibility hidden and opacity 0 */
+@keyframes fadeOut{
+	0% { opacity: 1; visibility: visible; }
+	99% { opacity: 0; visibility: visible; }
+	100% { opacity: 0; visibility: hidden; }
+}
+
 
 
 main{
@@ -137,7 +235,7 @@ main p, main h4, main input[type=text], main .stat-title{
 }
 
 /* Making all texts in the popup unselectable */
-:not(input[type=text], .errorTab p){
+:not(input[type=text], :is(.errorTab, .errorPopup) p){
 	user-select: none;
 }
 
